@@ -35,6 +35,6 @@ type Registry struct {
 	client client
 }
 
-func (r *Registry) Ecspresso(ctx context.Context, version string) (path string, err error) {
-	return r.client.InstallTool(ctx, "ecspresso", version, installScript)
+func (r *Registry) Lambroll(ctx context.Context, version string) (path string, err error) {
+	return r.client.InstallTool(ctx, "lambroll", version, installScript)
 }

@@ -25,7 +25,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRegistry_Ecspresso(t *testing.T) {
+func TestRegistry_Lambroll(t *testing.T) {
 	t.Parallel()
 
 	c, err := toolregistrytest.NewToolRegistry(t)
@@ -35,14 +35,14 @@ func TestRegistry_Ecspresso(t *testing.T) {
 
 	t.Cleanup(func() { c.Close() })
 
-	p, err := r.Ecspresso(context.Background(), "2.4.5")
+	p, err := r.Lambroll(context.Background(), "v1.1.3")
 	require.NoError(t, err)
 	require.NotEmpty(t, p)
 
 	out, err := exec.CommandContext(context.Background(), p, "version").CombinedOutput()
 	require.NoError(t, err)
 
-	expected := "ecspresso v2.4.5"
+	expected := "lambroll v1.1.3"
 
 	assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(string(out)))
 }
