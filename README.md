@@ -1,5 +1,9 @@
 # pipecd-plugin-prototypes
-[DO NOT USE IN PROD] Prototypes of PipeCD plugin
+[DO NOT USE IN PROD] Prototypes of PipeCD plugin for demonstration.
+
+Tests, error handlings, logging, configs,... are poor yet.
+
+See [Overview of the Plan for "Pluginnable" PipeCD](https://pipecd.dev/blog/2024/11/28/overview-of-the-plan-for-pluginnable-pipecd/) to understand what's PipeCD plugin.
 
 ## Temporary Usage
 
