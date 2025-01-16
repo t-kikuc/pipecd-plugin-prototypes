@@ -24,8 +24,8 @@ import (
 	"github.com/pipe-cd/pipecd/pkg/model"
 	"github.com/pipe-cd/pipecd/pkg/plugin/api/v1alpha1/deployment"
 	"github.com/pipe-cd/pipecd/pkg/plugin/logpersister"
+	"github.com/t-kikuc/pipecd-plugin-prototypes/ecspresso/cli"
 	ecspconfig "github.com/t-kikuc/pipecd-plugin-prototypes/ecspresso/config"
-	"github.com/t-kikuc/pipecd-plugin-prototypes/ecspresso/provider"
 )
 
 type deployExecutor struct {
@@ -35,8 +35,8 @@ type deployExecutor struct {
 	slp           logpersister.StageLogPersister
 }
 
-func (e *deployExecutor) initEcspressoCommand(ctx context.Context) (cmd *provider.Ecspresso, ok bool) {
-	cmd = provider.NewEcspresso(
+func (e *deployExecutor) initEcspressoCommand(ctx context.Context) (cmd *cli.Ecspresso, ok bool) {
+	cmd = cli.NewEcspresso(
 		e.ecspressoPath,
 		e.appDir,
 		e.input.Config,
@@ -124,7 +124,7 @@ func (e *deployExecutor) ensureRollback(ctx context.Context, runningCommitHash s
 	return model.StageStatus_STAGE_SUCCESS
 }
 
-func showUsingVersion(ctx context.Context, cmd *provider.Ecspresso, slp logpersister.StageLogPersister) (ok bool) {
+func showUsingVersion(ctx context.Context, cmd *cli.Ecspresso, slp logpersister.StageLogPersister) (ok bool) {
 	version, err := cmd.Version(ctx)
 	if err != nil {
 		slp.Errorf("Failed to check ecspresso version (%v)", err)
