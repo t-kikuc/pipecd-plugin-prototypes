@@ -27,7 +27,7 @@ type options struct {
 
 type Option func(*options)
 
-type Ecspresso struct {
+type Lambroll struct {
 	execPath   string
 	dir        string
 	configPath string
@@ -35,13 +35,13 @@ type Ecspresso struct {
 	options options
 }
 
-func NewEcspresso(execPath, dir, configPath string, opts ...Option) *Ecspresso {
+func NewLambroll(execPath, dir, configPath string, opts ...Option) *Lambroll {
 	opt := options{}
 	for _, o := range opts {
 		o(&opt)
 	}
 
-	return &Ecspresso{
+	return &Lambroll{
 		execPath:   execPath,
 		dir:        dir,
 		configPath: configPath,
@@ -49,7 +49,7 @@ func NewEcspresso(execPath, dir, configPath string, opts ...Option) *Ecspresso {
 	}
 }
 
-func (e *Ecspresso) Version(ctx context.Context) (string, error) {
+func (e *Lambroll) Version(ctx context.Context) (string, error) {
 	args := []string{"version"}
 	cmd := exec.CommandContext(ctx, e.execPath, args...)
 	cmd.Dir = e.dir
@@ -62,7 +62,7 @@ func (e *Ecspresso) Version(ctx context.Context) (string, error) {
 	return strings.TrimSpace(string(out)), nil
 }
 
-func (e *Ecspresso) Deploy(ctx context.Context, w io.Writer) error {
+func (e *Lambroll) Deploy(ctx context.Context, w io.Writer) error {
 	args := []string{
 		"deploy",
 		"--config", e.configPath,
@@ -73,11 +73,11 @@ func (e *Ecspresso) Deploy(ctx context.Context, w io.Writer) error {
 	cmd.Stdout = w
 	cmd.Stderr = w
 
-	fmt.Fprintf(w, "execute: 'ecspresso %s'", strings.Join(args, " "))
+	fmt.Fprintf(w, "execute 'lambroll %s'", strings.Join(args, " "))
 	return cmd.Run()
 }
 
-func (e *Ecspresso) Diff(ctx context.Context, w io.Writer) error {
+func (e *Lambroll) Diff(ctx context.Context, w io.Writer) error {
 	args := []string{
 		"diff",
 	}
@@ -87,6 +87,6 @@ func (e *Ecspresso) Diff(ctx context.Context, w io.Writer) error {
 	cmd.Stdout = w
 	cmd.Stderr = w
 
-	fmt.Fprintf(w, "execute: 'ecspresso %s'\n", strings.Join(args, " "))
+	fmt.Fprintf(w, "execute 'lambroll %s'\n", strings.Join(args, " "))
 	return cmd.Run()
 }

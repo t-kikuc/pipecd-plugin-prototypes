@@ -29,15 +29,15 @@ import (
 )
 
 type deployExecutor struct {
-	appDir        string
-	ecspressoPath string
-	input         ecspconfig.EcspressoDeploymentInput
-	slp           logpersister.StageLogPersister
+	appDir       string
+	lambrollPath string
+	input        ecspconfig.LambrollDeploymentInput
+	slp          logpersister.StageLogPersister
 }
 
-func (e *deployExecutor) initEcspressoCommand(ctx context.Context) (cmd *cli.Ecspresso, ok bool) {
-	cmd = cli.NewEcspresso(
-		e.ecspressoPath,
+func (e *deployExecutor) initLambrollCommand(ctx context.Context) (cmd *cli.Lambroll, ok bool) {
+	cmd = cli.NewLambroll(
+		e.lambrollPath,
 		e.appDir,
 		e.input.Config,
 	)
@@ -50,7 +50,7 @@ func (e *deployExecutor) initEcspressoCommand(ctx context.Context) (cmd *cli.Ecs
 }
 
 func (s *DeploymentServiceServer) executeStage(ctx context.Context, slp logpersister.StageLogPersister, input *deployment.ExecutePluginInput) (model.StageStatus, error) {
-	cfg, err := config.DecodeYAML[*ecspconfig.EcspressoApplicationSpec](input.GetTargetDeploymentSource().GetApplicationConfig())
+	cfg, err := config.DecodeYAML[*ecspconfig.LambrollApplicationSpec](input.GetTargetDeploymentSource().GetApplicationConfig())
 	if err != nil {
 		slp.Errorf("Failed while decoding application config (%v)", err)
 		return model.StageStatus_STAGE_FAILURE, err
@@ -61,7 +61,7 @@ func (s *DeploymentServiceServer) executeStage(ctx context.Context, slp logpersi
 		slp:    slp,
 		appDir: string(input.GetTargetDeploymentSource().GetApplicationDirectory()),
 	}
-	e.ecspressoPath, err = s.toolRegistry.Ecspresso(ctx, s.deployTargetConfig.Version)
+	e.lambrollPath, err = s.toolRegistry.Lambroll(ctx, s.deployTargetConfig.Version)
 	if err != nil {
 		return model.StageStatus_STAGE_FAILURE, err
 	}
@@ -69,11 +69,11 @@ func (s *DeploymentServiceServer) executeStage(ctx context.Context, slp logpersi
 	slp.Infof("[DEBUG] ### pipedv1 executeStage() ###")
 
 	switch input.GetStage().GetName() {
-	case stageEcspressoDeploy.String():
+	case stageDeploy.String():
 		return e.ensureSync(ctx), nil
-	case stageEcspressoDiff.String():
+	case stageDiff.String():
 		return e.ensureDiff(ctx), nil
-	case stageEcspressoRollback.String():
+	case stageRollback.String():
 		e.appDir = string(input.GetRunningDeploymentSource().GetApplicationDirectory())
 		return e.ensureRollback(ctx, input.GetDeployment().GetRunningCommitHash()), nil
 	default:
@@ -82,7 +82,7 @@ func (s *DeploymentServiceServer) executeStage(ctx context.Context, slp logpersi
 }
 
 func (e *deployExecutor) ensureSync(ctx context.Context) model.StageStatus {
-	cmd, ok := e.initEcspressoCommand(ctx)
+	cmd, ok := e.initLambrollCommand(ctx)
 	if !ok {
 		return model.StageStatus_STAGE_FAILURE
 	}
@@ -97,7 +97,7 @@ func (e *deployExecutor) ensureSync(ctx context.Context) model.StageStatus {
 }
 
 func (e *deployExecutor) ensureDiff(ctx context.Context) model.StageStatus {
-	cmd, ok := e.initEcspressoCommand(ctx)
+	cmd, ok := e.initLambrollCommand(ctx)
 	if !ok {
 		return model.StageStatus_STAGE_FAILURE
 	}
@@ -120,7 +120,7 @@ func (e *deployExecutor) ensureRollback(ctx context.Context, runningCommitHash s
 
 	e.slp.Infof("Start rolling back to the state defined at commit %s", runningCommitHash)
 
-	cmd, ok := e.initEcspressoCommand(ctx)
+	cmd, ok := e.initLambrollCommand(ctx)
 	if !ok {
 		return model.StageStatus_STAGE_FAILURE
 	}
@@ -134,12 +134,12 @@ func (e *deployExecutor) ensureRollback(ctx context.Context, runningCommitHash s
 	return model.StageStatus_STAGE_SUCCESS
 }
 
-func showUsingVersion(ctx context.Context, cmd *cli.Ecspresso, slp logpersister.StageLogPersister) (ok bool) {
+func showUsingVersion(ctx context.Context, cmd *cli.Lambroll, slp logpersister.StageLogPersister) (ok bool) {
 	version, err := cmd.Version(ctx)
 	if err != nil {
-		slp.Errorf("Failed to check ecspresso version (%v)", err)
+		slp.Errorf("Failed to check lambroll version (%v)", err)
 		return false
 	}
-	slp.Infof("Using ecspresso version %q to execute the ecspresso commands", version)
+	slp.Infof("Using lambroll version %q to execute the lambroll commands", version)
 	return true
 }
