@@ -52,7 +52,7 @@ func newPluginCommand() *cobra.Command {
 	}
 	cmd := &cobra.Command{
 		Use:   "start",
-		Short: "Start running ecspresso-plugin.",
+		Short: "Start running lambroll-plugin.",
 		RunE:  cli.WithContext(s.run),
 	}
 

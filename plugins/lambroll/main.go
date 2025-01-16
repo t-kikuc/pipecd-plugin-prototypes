@@ -22,8 +22,8 @@ import (
 
 func main() {
 	app := cli.NewApp(
-		"pipecd-plugin-ecspresso-prototype",
-		"Plugin component to deploy ECS services by ecspresso.",
+		"pipecd-plugin-lambroll-prototype",
+		"Plugin component to deploy Lambda functions by lambroll.",
 	)
 	app.AddCommands(
 		newPluginCommand(),

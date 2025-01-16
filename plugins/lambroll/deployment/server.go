@@ -36,7 +36,7 @@ type toolClient interface {
 }
 
 type toolRegistry interface {
-	Ecspresso(ctx context.Context, version string) (path string, err error)
+	Lambroll(ctx context.Context, version string) (path string, err error)
 }
 
 type logPersister interface {
@@ -51,7 +51,7 @@ type DeploymentServiceServer struct {
 	pluginConfig *config.PipedPlugin
 	// deployTargetConfig might be empty. e.g. when it's not specified in the piped config.
 	// For now, this plugin supports up to one deploy target.
-	deployTargetConfig ecspconfig.EcspressoDeployTargetConfig
+	deployTargetConfig ecspconfig.LambrollDeployTargetConfig
 
 	logger       *zap.Logger
 	toolRegistry toolRegistry
@@ -67,7 +67,7 @@ func NewDeploymentServiceServer(
 ) (*DeploymentServiceServer, error) {
 	toolRegistry := toolregistry.NewRegistry(toolClient)
 
-	deployTargetConfig := ecspconfig.EcspressoDeployTargetConfig{}
+	deployTargetConfig := ecspconfig.LambrollDeployTargetConfig{}
 	if len(config.DeployTargets) > 0 {
 		var err error
 		if deployTargetConfig, err = ecspconfig.ParseDeployTargetConfig(config.DeployTargets[0]); err != nil {
@@ -91,7 +91,7 @@ func (s *DeploymentServiceServer) Register(server *grpc.Server) {
 
 // DetermineStrategy implements deployment.DeploymentServiceServer.
 func (s *DeploymentServiceServer) DetermineStrategy(ctx context.Context, request *deployment.DetermineStrategyRequest) (*deployment.DetermineStrategyResponse, error) {
-	cfg, err := config.DecodeYAML[*ecspconfig.EcspressoApplicationSpec](request.GetInput().GetTargetDeploymentSource().GetApplicationConfig())
+	cfg, err := config.DecodeYAML[*ecspconfig.LambrollApplicationSpec](request.GetInput().GetTargetDeploymentSource().GetApplicationConfig())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
