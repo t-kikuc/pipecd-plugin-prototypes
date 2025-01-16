@@ -18,31 +18,31 @@ import (
 	config "github.com/pipe-cd/pipecd/pkg/configv1"
 )
 
-// EcspressoApplicationSpec represents an application configuration for Ecspresso application.
-type EcspressoApplicationSpec struct {
+// EcscheduleApplicationSpec represents an application configuration for Ecschedule application.
+type EcscheduleApplicationSpec struct {
 	config.GenericApplicationSpec
-	// Input for ecspresso deployment. e.g. ecspresso version, workspace
-	Input EcspressoDeploymentInput `json:"input"`
+	// Input for ecschedule deployment. e.g. ecschedule version
+	Input EcscheduleDeploymentInput `json:"input"`
 	// Configuration for quick sync.
-	QuickSync EcspressoDeployStageOptions `json:"quickSync"`
+	QuickSync EcscheduleApplyStageOptions `json:"quickSync"`
 }
 
-func (s *EcspressoApplicationSpec) Validate() error {
-	// TODO: Validate EcspressoApplicationSpec fields.
+func (s *EcscheduleApplicationSpec) Validate() error {
+	// TODO: Validate EcscheduleApplicationSpec fields.
 	return nil
 }
 
-type EcspressoDeploymentInput struct {
-	// Config is the path to the ecspresso config file. This will be used as `ecspresso deploy --config <Config>`
+type EcscheduleDeploymentInput struct {
+	// Config is the path to the ecschedule config file. This will be used as `ecschedule deploy --config <Config>`
 	Config string `json:"config"`
 }
 
-// EcspressoDeployStageOptions contains all configurable values for a ECSPRESSO_SYNC stage.
-type EcspressoDeployStageOptions struct {
+// EcscheduleApplyStageOptions contains all configurable values for a ECSPRESSO_SYNC stage.
+type EcscheduleApplyStageOptions struct {
 }
 
-// EcspressoDiffStageOptions contains all configurable values for a ECSPRESSO_PLAN stage.
-type EcspressoDiffStageOptions struct {
+// EcscheduleDiffStageOptions contains all configurable values for a ECSPRESSO_PLAN stage.
+type EcscheduleDiffStageOptions struct {
 	// Exit the pipeline if the result is "No Changes" with success status.
 	ExitOnNoChanges bool `json:"exitOnNoChanges"`
 }
