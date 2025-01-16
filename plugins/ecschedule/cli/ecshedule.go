@@ -27,7 +27,7 @@ type options struct {
 
 type Option func(*options)
 
-type Ecspresso struct {
+type Ecschedule struct {
 	execPath   string
 	dir        string
 	configPath string
@@ -35,13 +35,13 @@ type Ecspresso struct {
 	options options
 }
 
-func NewEcspresso(execPath, dir, configPath string, opts ...Option) *Ecspresso {
+func NewEcschedule(execPath, dir, configPath string, opts ...Option) *Ecschedule {
 	opt := options{}
 	for _, o := range opts {
 		o(&opt)
 	}
 
-	return &Ecspresso{
+	return &Ecschedule{
 		execPath:   execPath,
 		dir:        dir,
 		configPath: configPath,
@@ -49,8 +49,8 @@ func NewEcspresso(execPath, dir, configPath string, opts ...Option) *Ecspresso {
 	}
 }
 
-func (e *Ecspresso) Version(ctx context.Context) (string, error) {
-	args := []string{"version"}
+func (e *Ecschedule) Version(ctx context.Context) (string, error) {
+	args := []string{"-version"}
 	cmd := exec.CommandContext(ctx, e.execPath, args...)
 	cmd.Dir = e.dir
 
@@ -62,10 +62,11 @@ func (e *Ecspresso) Version(ctx context.Context) (string, error) {
 	return strings.TrimSpace(string(out)), nil
 }
 
-func (e *Ecspresso) Deploy(ctx context.Context, w io.Writer) error {
+func (e *Ecschedule) Apply(ctx context.Context, w io.Writer) error {
 	args := []string{
-		"deploy",
-		"--config", e.configPath,
+		"apply",
+		"-conf", e.configPath,
+		"-all",
 	}
 
 	cmd := exec.CommandContext(ctx, e.execPath, args...)
@@ -73,13 +74,15 @@ func (e *Ecspresso) Deploy(ctx context.Context, w io.Writer) error {
 	cmd.Stdout = w
 	cmd.Stderr = w
 
-	fmt.Fprintf(w, "execute: 'ecspresso %s'", strings.Join(args, " "))
+	fmt.Fprintf(w, "execute 'ecschedule %s'", strings.Join(args, " "))
 	return cmd.Run()
 }
 
-func (e *Ecspresso) Diff(ctx context.Context, w io.Writer) error {
+func (e *Ecschedule) Diff(ctx context.Context, w io.Writer) error {
 	args := []string{
 		"diff",
+		"-conf", e.configPath,
+		"-all",
 	}
 
 	cmd := exec.CommandContext(ctx, e.execPath, args...)
@@ -87,6 +90,6 @@ func (e *Ecspresso) Diff(ctx context.Context, w io.Writer) error {
 	cmd.Stdout = w
 	cmd.Stderr = w
 
-	fmt.Fprintf(w, "execute: 'ecspresso %s'\n", strings.Join(args, " "))
+	fmt.Fprintf(w, "execute 'ecschedule %s'\n", strings.Join(args, " "))
 	return cmd.Run()
 }
