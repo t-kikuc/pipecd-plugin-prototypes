@@ -27,12 +27,12 @@ type stage string
 
 const (
 	// stageDeploy executes "deploy"
-	stageDeploy stage = "DEPLOY"
+	stageDeploy stage = "LAMBROLL_DEPLOY"
 	// stageDiff executes "diff"
-	stageDiff stage = "DIFF"
+	stageDiff stage = "LAMBROLL_DIFF"
 
 	// stageRollback rollbacks the deployment.
-	stageRollback stage = "ROLLBACK"
+	stageRollback stage = "LAMBROLL_ROLLBACK"
 )
 
 var allStages = []string{
