@@ -48,6 +48,8 @@ func TestBuildQuickSyncStages(t *testing.T) {
 					Metadata:  nil,
 					CreatedAt: now.Unix(),
 					UpdatedAt: now.Unix(),
+
+					Visible: true, // TODO: This is for debug with v0 UI
 				},
 			},
 		},
@@ -65,6 +67,8 @@ func TestBuildQuickSyncStages(t *testing.T) {
 					Metadata:  nil,
 					CreatedAt: now.Unix(),
 					UpdatedAt: now.Unix(),
+
+					Visible: true, // TODO: This is for debug with v0 UI
 				},
 				{
 					Id:        "EcspressoRollback",
@@ -81,6 +85,7 @@ func TestBuildQuickSyncStages(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			actual := buildQuickSyncStages(tt.autoRollback, now)
 			assert.Equal(t, tt.expected, actual)
 		})
@@ -125,6 +130,8 @@ func TestBuildPipelineStages(t *testing.T) {
 					Status:    model.StageStatus_STAGE_NOT_STARTED_YET,
 					CreatedAt: now.Unix(),
 					UpdatedAt: now.Unix(),
+
+					Visible: true, // TODO: This is for debug with v0 UI
 				},
 				{
 					Id:        "stage-2",
@@ -135,6 +142,8 @@ func TestBuildPipelineStages(t *testing.T) {
 					Status:    model.StageStatus_STAGE_NOT_STARTED_YET,
 					CreatedAt: now.Unix(),
 					UpdatedAt: now.Unix(),
+
+					Visible: true, // TODO: This is for debug with v0 UI
 				},
 			},
 		},
@@ -165,6 +174,8 @@ func TestBuildPipelineStages(t *testing.T) {
 					Status:    model.StageStatus_STAGE_NOT_STARTED_YET,
 					CreatedAt: now.Unix(),
 					UpdatedAt: now.Unix(),
+
+					Visible: true, // TODO: This is for debug with v0 UI
 				},
 				{
 					Id:        "stage-2",
@@ -175,6 +186,8 @@ func TestBuildPipelineStages(t *testing.T) {
 					Status:    model.StageStatus_STAGE_NOT_STARTED_YET,
 					CreatedAt: now.Unix(),
 					UpdatedAt: now.Unix(),
+
+					Visible: true, // TODO: This is for debug with v0 UI
 				},
 				{
 					Id:        "EcspressoRollback",
@@ -192,6 +205,7 @@ func TestBuildPipelineStages(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			actual := buildPipelineStages(tt.stages, tt.autoRollback, now)
 			assert.Equal(t, tt.expected, actual)
 		})
