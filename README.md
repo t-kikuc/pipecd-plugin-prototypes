@@ -45,6 +45,19 @@ make build/plugin
 ```
 
 2. Run pipedv1
+
+(Optionnal) If you don't have pipecd source code, clone like this:
+```sh
+git clone https://github.com/pipe-cd/pipecd.git
+cd pipecd
+```
+
+```sh
+# 'EXPERIMENTAL=true' is required for pipedv1.
+# Add `INSECURE=true` when using your local Control Plane etc.
+make run/piped CONFIG_FILE=<YOUR_PIPED_V1_CONFIG_FILE> EXPERIMENTAL=true
+```
+
 3. Override the app config
 
 Example of new app config:
