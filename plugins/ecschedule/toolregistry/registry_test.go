@@ -25,7 +25,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRegistry_Ecspresso(t *testing.T) {
+func TestRegistry_Ecschedule(t *testing.T) {
 	t.Parallel()
 
 	c, err := toolregistrytest.NewToolRegistry(t)
@@ -35,14 +35,14 @@ func TestRegistry_Ecspresso(t *testing.T) {
 
 	t.Cleanup(func() { c.Close() })
 
-	p, err := r.Ecspresso(context.Background(), "2.4.5")
+	p, err := r.Ecschedule(context.Background(), "v0.12.0")
 	require.NoError(t, err)
 	require.NotEmpty(t, p)
 
-	out, err := exec.CommandContext(context.Background(), p, "version").CombinedOutput()
+	out, err := exec.CommandContext(context.Background(), p, "-version").CombinedOutput()
 	require.NoError(t, err)
 
-	expected := "ecspresso v2.4.5"
+	expected := "ecschedule v0.12.0 (rev:586cc61)"
 
 	assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(string(out)))
 }
