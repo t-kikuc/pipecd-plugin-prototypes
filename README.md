@@ -10,7 +10,7 @@ See [Overview of the Plan for "Pluginnable" PipeCD](https://pipecd.dev/blog/2024
 ### Preparation
 
 1. Run pipedv0
-2. Register any one app with pipedv0 on UI
+2. Register any one app with pipedv0 on UI and deploy it
    1. Because pipedv1 cannot register an app yet...
    2. _Note: Do not specify plugin config in app.pipecd.yaml yet._
 3. Create config of pipedv1
