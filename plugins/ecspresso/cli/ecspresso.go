@@ -73,6 +73,20 @@ func (e *Ecspresso) Deploy(ctx context.Context, w io.Writer) error {
 	cmd.Stdout = w
 	cmd.Stderr = w
 
-	io.WriteString(w, fmt.Sprintf("ecspresso %s", strings.Join(args, " ")))
+	fmt.Fprintf(w, "execute: 'ecspresso %s'", strings.Join(args, " "))
+	return cmd.Run()
+}
+
+func (e *Ecspresso) Diff(ctx context.Context, w io.Writer) error {
+	args := []string{
+		"diff",
+	}
+
+	cmd := exec.CommandContext(ctx, e.execPath, args...)
+	cmd.Dir = e.dir
+	cmd.Stdout = w
+	cmd.Stderr = w
+
+	fmt.Fprintf(w, "execute: 'ecspresso %s'\n", strings.Join(args, " "))
 	return cmd.Run()
 }

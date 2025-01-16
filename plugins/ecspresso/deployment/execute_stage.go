@@ -71,13 +71,8 @@ func (s *DeploymentServiceServer) executeStage(ctx context.Context, slp logpersi
 	switch input.GetStage().GetName() {
 	case stageEcspressoDeploy.String():
 		return e.ensureSync(ctx), nil
-	// case stageEcspressoDiff.String():
-	// 	opts := &ecspconfig.EcspressoDiffStageOptions{}
-	// 	if err := json.Unmarshal(input.GetStageConfig(), opts); err != nil {
-	// 		slp.Errorf("Failed to unmarshal stage config (%v)", err)
-	// 		return model.StageStatus_STAGE_FAILURE, err
-	// 	}
-	// 	return e.ensurePlan(ctx, opts), nil
+	case stageEcspressoDiff.String():
+		return e.ensureDiff(ctx), nil
 	case stageEcspressoRollback.String():
 		e.appDir = string(input.GetRunningDeploymentSource().GetApplicationDirectory())
 		return e.ensureRollback(ctx, input.GetDeployment().GetRunningCommitHash()), nil
@@ -98,6 +93,21 @@ func (e *deployExecutor) ensureSync(ctx context.Context) model.StageStatus {
 	}
 
 	e.slp.Success("Successfully applied changes")
+	return model.StageStatus_STAGE_SUCCESS
+}
+
+func (e *deployExecutor) ensureDiff(ctx context.Context) model.StageStatus {
+	cmd, ok := e.initEcspressoCommand(ctx)
+	if !ok {
+		return model.StageStatus_STAGE_FAILURE
+	}
+
+	if err := cmd.Diff(ctx, e.slp); err != nil {
+		e.slp.Errorf("Failed to apply changes (%v)", err)
+		return model.StageStatus_STAGE_FAILURE
+	}
+
+	e.slp.Success("Successfully executed 'diff'")
 	return model.StageStatus_STAGE_SUCCESS
 }
 
