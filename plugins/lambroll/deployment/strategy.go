@@ -19,10 +19,10 @@ import (
 	ecspconfig "github.com/t-kikuc/pipecd-plugin-prototypes/lambroll/config"
 )
 
-func determineStrategy(spec ecspconfig.EcspressoApplicationSpec) (strategy model.SyncStrategy, summary string, err error) {
+func determineStrategy(spec ecspconfig.LambrollApplicationSpec) (strategy model.SyncStrategy, summary string, err error) {
 	if spec.Pipeline == nil || len(spec.Pipeline.Stages) == 0 {
 		return model.SyncStrategy_QUICK_SYNC,
-			"Quick sync by executing 'ecspresso deploy' because no pipeline was configured",
+			"Quick sync by executing 'lambroll deploy' because no pipeline was configured",
 			nil
 	} else {
 		return model.SyncStrategy_PIPELINE,

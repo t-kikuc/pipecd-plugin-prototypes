@@ -26,31 +26,31 @@ import (
 type stage string
 
 const (
-	// stageEcspressoDeploy executes "deploy"
-	stageEcspressoDeploy stage = "ECSPRESSO_DEPLOY"
-	// stageEcspressoDiff executes "diff"
-	stageEcspressoDiff stage = "ECSPRESSO_DIFF"
+	// stageLambrollDeploy executes "deploy"
+	stageLambrollDeploy stage = "LAMBROLL_DEPLOY"
+	// stageLambrollDiff executes "diff"
+	stageLambrollDiff stage = "LAMBROLL_DIFF"
 
-	// stageEcspressoRollback rollbacks the deployment.
-	stageEcspressoRollback stage = "ECSPRESSO_ROLLBACK"
+	// stageLambrollRollback rollbacks the deployment.
+	stageLambrollRollback stage = "LAMBROLL_ROLLBACK"
 )
 
 var allStages = []string{
-	string(stageEcspressoDeploy),
-	string(stageEcspressoDiff),
-	string(stageEcspressoRollback),
+	string(stageLambrollDeploy),
+	string(stageLambrollDiff),
+	string(stageLambrollRollback),
 }
 
 var (
 	predefinedStageEcspressoDeploy = model.PipelineStage{
-		Id:       "EcspressoDeploy",
-		Name:     string(stageEcspressoDeploy),
-		Desc:     "Sync by executing 'ecspresso deploy'",
+		Id:       "LambrollDeploy",
+		Name:     string(stageLambrollDeploy),
+		Desc:     "Sync by executing 'lambroll deploy'",
 		Rollback: false,
 	}
 	predefinedStageEcspressoRollback = model.PipelineStage{
-		Id:       "EcspressoRollback",
-		Name:     string(stageEcspressoRollback),
+		Id:       "LambrollRollback",
+		Name:     string(stageLambrollRollback),
 		Desc:     "Rollback the deployment",
 		Rollback: true,
 	}
