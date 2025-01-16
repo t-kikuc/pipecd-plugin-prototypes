@@ -39,9 +39,9 @@ func TestBuildQuickSyncStages(t *testing.T) {
 			autoRollback: false,
 			expected: []*model.PipelineStage{
 				{
-					Id:        "EcspressoDeploy",
-					Name:      "ECSPRESSO_DEPLOY",
-					Desc:      "Sync by executing 'ecspresso deploy'",
+					Id:        "EcscheduleApply",
+					Name:      "ECSCHEDULE_APPLY",
+					Desc:      "Sync by executing 'ecschedule apply'",
 					Index:     0,
 					Rollback:  false,
 					Status:    model.StageStatus_STAGE_NOT_STARTED_YET,
@@ -58,9 +58,9 @@ func TestBuildQuickSyncStages(t *testing.T) {
 			autoRollback: true,
 			expected: []*model.PipelineStage{
 				{
-					Id:        "EcspressoDeploy",
-					Name:      "ECSPRESSO_DEPLOY",
-					Desc:      "Sync by executing 'ecspresso deploy'",
+					Id:        "EcscheduleApply",
+					Name:      "ECSCHEDULE_APPLY",
+					Desc:      "Sync by executing 'ecschedule apply'",
 					Index:     0,
 					Rollback:  false,
 					Status:    model.StageStatus_STAGE_NOT_STARTED_YET,
@@ -71,8 +71,8 @@ func TestBuildQuickSyncStages(t *testing.T) {
 					Visible: true, // TODO: This is for debug with v0 UI
 				},
 				{
-					Id:        "EcspressoRollback",
-					Name:      "ECSPRESSO_ROLLBACK",
+					Id:        "EcscheduleRollback",
+					Name:      "ECSCHEDULE_ROLLBACK",
 					Desc:      "Rollback the deployment",
 					Rollback:  true,
 					Status:    model.StageStatus_STAGE_NOT_STARTED_YET,
@@ -190,8 +190,8 @@ func TestBuildPipelineStages(t *testing.T) {
 					Visible: true, // TODO: This is for debug with v0 UI
 				},
 				{
-					Id:        "EcspressoRollback",
-					Name:      "ECSPRESSO_ROLLBACK",
+					Id:        "EcscheduleRollback",
+					Name:      "ECSCHEDULE_ROLLBACK",
 					Desc:      "Rollback the deployment",
 					Index:     0,
 					Rollback:  true,

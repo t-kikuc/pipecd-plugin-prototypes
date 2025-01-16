@@ -36,7 +36,7 @@ type toolClient interface {
 }
 
 type toolRegistry interface {
-	Ecspresso(ctx context.Context, version string) (path string, err error)
+	Ecschedule(ctx context.Context, version string) (path string, err error)
 }
 
 type logPersister interface {
@@ -91,7 +91,7 @@ func (s *DeploymentServiceServer) Register(server *grpc.Server) {
 
 // DetermineStrategy implements deployment.DeploymentServiceServer.
 func (s *DeploymentServiceServer) DetermineStrategy(ctx context.Context, request *deployment.DetermineStrategyRequest) (*deployment.DetermineStrategyResponse, error) {
-	cfg, err := config.DecodeYAML[*ecspconfig.EcspressoApplicationSpec](request.GetInput().GetTargetDeploymentSource().GetApplicationConfig())
+	cfg, err := config.DecodeYAML[*ecspconfig.EcscheduleApplicationSpec](request.GetInput().GetTargetDeploymentSource().GetApplicationConfig())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

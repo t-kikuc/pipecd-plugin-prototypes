@@ -26,31 +26,31 @@ import (
 type stage string
 
 const (
-	// stageEcspressoDeploy executes "deploy"
-	stageEcspressoDeploy stage = "ECSPRESSO_DEPLOY"
-	// stageEcspressoDiff executes "diff"
-	stageEcspressoDiff stage = "ECSPRESSO_DIFF"
+	// stageApply executes "apply"
+	stageApply stage = "ECSCHEDULE_APPLY"
+	// stageDiff executes "diff"
+	stageDiff stage = "ECSCHEDULE_DIFF"
 
-	// stageEcspressoRollback rollbacks the deployment.
-	stageEcspressoRollback stage = "ECSPRESSO_ROLLBACK"
+	// stageRollback rollbacks the deployment.
+	stageRollback stage = "ECSCHEDULE_ROLLBACK"
 )
 
 var allStages = []string{
-	string(stageEcspressoDeploy),
-	string(stageEcspressoDiff),
-	string(stageEcspressoRollback),
+	string(stageApply),
+	string(stageDiff),
+	string(stageRollback),
 }
 
 var (
-	predefinedStageEcspressoDeploy = model.PipelineStage{
-		Id:       "EcspressoDeploy",
-		Name:     string(stageEcspressoDeploy),
-		Desc:     "Sync by executing 'ecspresso deploy'",
+	predefinedStageApply = model.PipelineStage{
+		Id:       "EcsheduleApply",
+		Name:     string(stageApply),
+		Desc:     "Sync by executing 'ecschedule apply'",
 		Rollback: false,
 	}
-	predefinedStageEcspressoRollback = model.PipelineStage{
-		Id:       "EcspressoRollback",
-		Name:     string(stageEcspressoRollback),
+	predefinedStageRollback = model.PipelineStage{
+		Id:       "EcsheduleRollback",
+		Name:     string(stageRollback),
 		Desc:     "Rollback the deployment",
 		Rollback: true,
 	}
@@ -64,10 +64,10 @@ func buildQuickSyncStages(autoRollback bool, now time.Time) []*model.PipelineSta
 	out := make([]*model.PipelineStage, 0, 2)
 
 	out = append(out, &model.PipelineStage{
-		Id:        predefinedStageEcspressoDeploy.GetId(),
-		Name:      predefinedStageEcspressoDeploy.GetName(),
-		Desc:      predefinedStageEcspressoDeploy.GetDesc(),
-		Rollback:  predefinedStageEcspressoDeploy.GetRollback(),
+		Id:        predefinedStageApply.GetId(),
+		Name:      predefinedStageApply.GetName(),
+		Desc:      predefinedStageApply.GetDesc(),
+		Rollback:  predefinedStageApply.GetRollback(),
 		Status:    model.StageStatus_STAGE_NOT_STARTED_YET,
 		Metadata:  nil,
 		CreatedAt: now.Unix(),
@@ -79,10 +79,10 @@ func buildQuickSyncStages(autoRollback bool, now time.Time) []*model.PipelineSta
 	// Append ROLLBACK stage if auto rollback is enabled.
 	if autoRollback {
 		out = append(out, &model.PipelineStage{
-			Id:        predefinedStageEcspressoRollback.GetId(),
-			Name:      predefinedStageEcspressoRollback.GetName(),
-			Desc:      predefinedStageEcspressoRollback.GetDesc(),
-			Rollback:  predefinedStageEcspressoRollback.GetRollback(),
+			Id:        predefinedStageRollback.GetId(),
+			Name:      predefinedStageRollback.GetName(),
+			Desc:      predefinedStageRollback.GetDesc(),
+			Rollback:  predefinedStageRollback.GetRollback(),
 			Status:    model.StageStatus_STAGE_NOT_STARTED_YET,
 			CreatedAt: now.Unix(),
 			UpdatedAt: now.Unix(),
@@ -122,11 +122,11 @@ func buildPipelineStages(stages []*deployment.BuildPipelineSyncStagesRequest_Sta
 		}).GetIndex()
 
 		out = append(out, &model.PipelineStage{
-			Id:        predefinedStageEcspressoRollback.GetId(),
-			Name:      predefinedStageEcspressoRollback.GetName(),
-			Desc:      predefinedStageEcspressoRollback.GetDesc(),
+			Id:        predefinedStageRollback.GetId(),
+			Name:      predefinedStageRollback.GetName(),
+			Desc:      predefinedStageRollback.GetDesc(),
 			Index:     minIndex,
-			Rollback:  predefinedStageEcspressoRollback.GetRollback(),
+			Rollback:  predefinedStageRollback.GetRollback(),
 			Status:    model.StageStatus_STAGE_NOT_STARTED_YET,
 			CreatedAt: now.Unix(),
 			UpdatedAt: now.Unix(),
