@@ -43,13 +43,13 @@ var allStages = []string{
 
 var (
 	predefinedStageApply = model.PipelineStage{
-		Id:       "EcsheduleApply",
+		Id:       "EcscheduleApply",
 		Name:     string(stageApply),
 		Desc:     "Sync by executing 'ecschedule apply'",
 		Rollback: false,
 	}
 	predefinedStageRollback = model.PipelineStage{
-		Id:       "EcsheduleRollback",
+		Id:       "EcscheduleRollback",
 		Name:     string(stageRollback),
 		Desc:     "Rollback the deployment",
 		Rollback: true,
