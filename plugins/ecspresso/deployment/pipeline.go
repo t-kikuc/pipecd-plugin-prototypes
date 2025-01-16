@@ -72,6 +72,8 @@ func buildQuickSyncStages(autoRollback bool, now time.Time) []*model.PipelineSta
 		Metadata:  nil,
 		CreatedAt: now.Unix(),
 		UpdatedAt: now.Unix(),
+
+		Visible: true, // TODO: for debug.
 	})
 
 	// Append ROLLBACK stage if auto rollback is enabled.
@@ -107,6 +109,8 @@ func buildPipelineStages(stages []*deployment.BuildPipelineSyncStagesRequest_Sta
 			Status:    model.StageStatus_STAGE_NOT_STARTED_YET,
 			CreatedAt: now.Unix(),
 			UpdatedAt: now.Unix(),
+
+			Visible: true, // TODO: for debug.
 		}
 		out = append(out, stage)
 	}
