@@ -23,6 +23,8 @@ import (
 
 // EcspressoDeployTargetConfig represents PipedDeployTarget.Config for ecspresso plugin.
 type EcspressoDeployTargetConfig struct {
+	// Version is the version of ecspresso to use.
+	Version string `json:"version"`
 	// TODO: Add fields if needed.
 }
 

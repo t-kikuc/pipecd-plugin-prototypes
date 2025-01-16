@@ -33,6 +33,8 @@ func (s *EcspressoApplicationSpec) Validate() error {
 }
 
 type EcspressoDeploymentInput struct {
+	// Config is the path to the ecspresso config file. This will be used as `ecspresso deploy --config <Config>`
+	Config string `json:"config"`
 }
 
 // EcspressoDeployStageOptions contains all configurable values for a ECSPRESSO_SYNC stage.
