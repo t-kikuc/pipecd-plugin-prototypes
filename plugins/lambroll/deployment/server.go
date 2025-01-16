@@ -58,7 +58,7 @@ type DeploymentServiceServer struct {
 	logPersister logPersister
 }
 
-// NewDeploymentServiceServer creates a new DeploymentServiceServer of ecspresso plugin.
+// NewDeploymentServiceServer creates a new DeploymentServiceServer of lambroll plugin.
 func NewDeploymentServiceServer(
 	config *config.PipedPlugin,
 	logger *zap.Logger,
@@ -78,7 +78,7 @@ func NewDeploymentServiceServer(
 	return &DeploymentServiceServer{
 		pluginConfig:       config,
 		deployTargetConfig: deployTargetConfig,
-		logger:             logger.Named("ecspresso-plugin"),
+		logger:             logger.Named("lambroll-plugin"),
 		toolRegistry:       toolRegistry,
 		logPersister:       logPersister,
 	}, nil
