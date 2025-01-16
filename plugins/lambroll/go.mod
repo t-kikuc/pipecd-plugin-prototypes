@@ -1,4 +1,4 @@
-module github.com/t-kikuc/pipecd-plugin-prototypes/ecspresso
+module github.com/t-kikuc/pipecd-plugin-prototypes/lambroll
 
 go 1.22.4
 

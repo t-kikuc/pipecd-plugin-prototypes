@@ -16,7 +16,7 @@ package deployment
 
 import (
 	"github.com/pipe-cd/pipecd/pkg/model"
-	ecspconfig "github.com/t-kikuc/pipecd-plugin-prototypes/ecspresso/config"
+	ecspconfig "github.com/t-kikuc/pipecd-plugin-prototypes/lambroll/config"
 )
 
 func determineStrategy(spec ecspconfig.EcspressoApplicationSpec) (strategy model.SyncStrategy, summary string, err error) {

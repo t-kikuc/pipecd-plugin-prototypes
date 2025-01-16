@@ -29,7 +29,7 @@ import (
 	"github.com/pipe-cd/pipecd/pkg/rpc"
 	"github.com/pipe-cd/pipecd/pkg/version"
 	"github.com/spf13/cobra"
-	"github.com/t-kikuc/pipecd-plugin-prototypes/ecspresso/deployment"
+	"github.com/t-kikuc/pipecd-plugin-prototypes/lambroll/deployment"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 )

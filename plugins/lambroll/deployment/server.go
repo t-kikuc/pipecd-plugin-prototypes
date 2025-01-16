@@ -27,8 +27,8 @@ import (
 	"github.com/pipe-cd/pipecd/pkg/plugin/api/v1alpha1/deployment"
 	"github.com/pipe-cd/pipecd/pkg/plugin/logpersister"
 	"github.com/pipe-cd/pipecd/pkg/plugin/signalhandler"
-	ecspconfig "github.com/t-kikuc/pipecd-plugin-prototypes/ecspresso/config"
-	"github.com/t-kikuc/pipecd-plugin-prototypes/ecspresso/toolregistry"
+	ecspconfig "github.com/t-kikuc/pipecd-plugin-prototypes/lambroll/config"
+	"github.com/t-kikuc/pipecd-plugin-prototypes/lambroll/toolregistry"
 )
 
 type toolClient interface {
