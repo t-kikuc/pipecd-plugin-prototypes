@@ -21,19 +21,18 @@ import (
 	pipedconfig "github.com/pipe-cd/pipecd/pkg/configv1"
 )
 
-// EcspressoDeployTargetConfig represents PipedDeployTarget.Config for ecspresso plugin.
-type EcspressoDeployTargetConfig struct {
-	// Version is the version of ecspresso to use. e.g. "2.4.5"
-	// Do not specify the prefix "v".
+// LambrollDeployTargetConfig represents PipedDeployTarget.Config for lambroll plugin.
+type LambrollDeployTargetConfig struct {
+	// Version is the version of lambroll to use. e.g. "v1.1.3"
 	Version string `json:"version"`
 	// TODO: Add fields if needed.
 }
 
-func ParseDeployTargetConfig(deployTarget pipedconfig.PipedDeployTarget) (EcspressoDeployTargetConfig, error) {
-	var cfg EcspressoDeployTargetConfig
+func ParseDeployTargetConfig(deployTarget pipedconfig.PipedDeployTarget) (LambrollDeployTargetConfig, error) {
+	var cfg LambrollDeployTargetConfig
 
 	if err := json.Unmarshal(deployTarget.Config, &cfg); err != nil {
-		return EcspressoDeployTargetConfig{}, fmt.Errorf("failed to unmarshal deploy target configuration: %w", err)
+		return LambrollDeployTargetConfig{}, fmt.Errorf("failed to unmarshal deploy target configuration: %w", err)
 	}
 
 	return cfg, nil

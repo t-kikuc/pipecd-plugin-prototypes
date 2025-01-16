@@ -18,31 +18,31 @@ import (
 	config "github.com/pipe-cd/pipecd/pkg/configv1"
 )
 
-// EcspressoApplicationSpec represents an application configuration for Ecspresso application.
-type EcspressoApplicationSpec struct {
+// LambrollApplicationSpec represents an application configuration for lambroll application.
+type LambrollApplicationSpec struct {
 	config.GenericApplicationSpec
-	// Input for ecspresso deployment. e.g. ecspresso version, workspace
-	Input EcspressoDeploymentInput `json:"input"`
+	// Input for lambroll deployment. e.g. lambroll version
+	Input LambrollDeploymentInput `json:"input"`
 	// Configuration for quick sync.
-	QuickSync EcspressoDeployStageOptions `json:"quickSync"`
+	QuickSync LambrollDeployStageOptions `json:"quickSync"`
 }
 
-func (s *EcspressoApplicationSpec) Validate() error {
-	// TODO: Validate EcspressoApplicationSpec fields.
+func (s *LambrollApplicationSpec) Validate() error {
+	// TODO: Validate LambrollApplicationSpec fields.
 	return nil
 }
 
-type EcspressoDeploymentInput struct {
-	// Config is the path to the ecspresso config file. This will be used as `ecspresso deploy --config <Config>`
+type LambrollDeploymentInput struct {
+	// Config is the path to the lambroll config file. This will be used as `lambroll deploy --config <Config>`
 	Config string `json:"config"`
 }
 
-// EcspressoDeployStageOptions contains all configurable values for a ECSPRESSO_SYNC stage.
-type EcspressoDeployStageOptions struct {
+// LambrollDeployStageOptions contains all configurable values for a LAMBROLL_SYNC stage.
+type LambrollDeployStageOptions struct {
 }
 
-// EcspressoDiffStageOptions contains all configurable values for a ECSPRESSO_PLAN stage.
-type EcspressoDiffStageOptions struct {
+// LambrollDiffStageOptions contains all configurable values for a LAMBROLL_PLAN stage.
+type LambrollDiffStageOptions struct {
 	// Exit the pipeline if the result is "No Changes" with success status.
 	ExitOnNoChanges bool `json:"exitOnNoChanges"`
 }
