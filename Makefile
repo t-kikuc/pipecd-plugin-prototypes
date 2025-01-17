@@ -11,10 +11,10 @@ build/plugin:
 	@echo "Building plugins..."
 	@for plugin in $(shell echo $(PLUGINS) | tr ',' ' '); do \
 		echo "\nBuilding plugin: $$plugin"; \
-		pushd $(PLUGINS_SRC_DIR)/$$plugin; \
+		pushd $(PLUGINS_SRC_DIR)/$$plugin > /dev/null; \
 		go build -o $(PLUGINS_OUT_DIR)/$$plugin ./ \
 			&& cp $(PLUGINS_OUT_DIR)/$$plugin $(PLUGINS_BIN_DIR)/$$plugin; \
-		popd; \
+		popd > /dev/null; \
 	done
 	@echo "Plugins are built and copied to $(PLUGINS_BIN_DIR)"
 
