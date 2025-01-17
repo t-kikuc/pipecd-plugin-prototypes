@@ -26,7 +26,7 @@ func (e *deployExecutor) initLambrollCommand(ctx context.Context) (cmd *cli.Lamb
 		e.lambrollPath,
 		e.appDir,
 		e.input.FunctionFile,
-		e.input.SourceDir,
+		e.input.Source,
 	)
 
 	if ok := showUsingVersion(ctx, cmd, e.slp); !ok {

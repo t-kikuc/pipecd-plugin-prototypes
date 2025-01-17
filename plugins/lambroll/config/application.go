@@ -26,15 +26,15 @@ type LambrollDeploymentInput struct {
 	// FunctionFile is the path to the lambroll function file. This will be used as `lambroll deploy --function <functionFile>`
 	FunctionFile string `json:"functionFile"`
 
-	// SourceDir is the path to the lambroll source directory. This will be used as `lambroll deploy --src <sourceDir>`
-	SourceDir string `json:"sourceDir"`
+	// Source is the path to the lambroll source directory. This will be used as `lambroll deploy --src <source>`
+	Source string `json:"source"`
 }
 
 func (i *LambrollDeploymentInput) validate() error {
 	if i.FunctionFile == "" {
 		return errors.New("functionFile is required")
 	}
-	if i.SourceDir == "" {
+	if i.Source == "" {
 		return errors.New("sourceDir is required")
 	}
 	return nil
