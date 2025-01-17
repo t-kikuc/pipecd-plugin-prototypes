@@ -25,7 +25,8 @@ func (e *deployExecutor) initLambrollCommand(ctx context.Context) (cmd *cli.Lamb
 	cmd = cli.NewLambroll(
 		e.lambrollPath,
 		e.appDir,
-		e.input.Config,
+		e.input.FunctionFile,
+		e.input.SourceDir,
 	)
 
 	if ok := showUsingVersion(ctx, cmd, e.slp); !ok {
@@ -52,7 +53,7 @@ func (s *DeploymentServiceServer) executeStage(ctx context.Context, slp logpersi
 		return model.StageStatus_STAGE_FAILURE, err
 	}
 
-	slp.Infof("[DEBUG] ### pipedv1 executeStage() ###")
+	slp.Infof("[DEBUG] ### pipedv1 executeStage() > %s ###", input.GetStage().GetName())
 
 	switch input.GetStage().GetName() {
 	case stageDeploy.String():

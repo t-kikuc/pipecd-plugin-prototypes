@@ -1,6 +1,8 @@
 package config
 
 import (
+	"errors"
+
 	config "github.com/pipe-cd/pipecd/pkg/configv1"
 )
 
@@ -14,13 +16,28 @@ type LambrollApplicationSpec struct {
 }
 
 func (s *LambrollApplicationSpec) Validate() error {
-	// TODO: Validate LambrollApplicationSpec fields.
+	if err := s.Input.validate(); err != nil {
+		return err
+	}
 	return nil
 }
 
 type LambrollDeploymentInput struct {
-	// Config is the path to the lambroll config file. This will be used as `lambroll deploy --config <Config>`
-	Config string `json:"config"`
+	// FunctionFile is the path to the lambroll function file. This will be used as `lambroll deploy --function <functionFile>`
+	FunctionFile string `json:"functionFile"`
+
+	// SourceDir is the path to the lambroll source directory. This will be used as `lambroll deploy --src <sourceDir>`
+	SourceDir string `json:"sourceDir"`
+}
+
+func (i *LambrollDeploymentInput) validate() error {
+	if i.FunctionFile == "" {
+		return errors.New("functionFile is required")
+	}
+	if i.SourceDir == "" {
+		return errors.New("sourceDir is required")
+	}
+	return nil
 }
 
 // LambrollDeployStageOptions contains all configurable values for a LAMBROLL_SYNC stage.

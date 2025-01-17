@@ -14,24 +14,27 @@ type options struct {
 type Option func(*options)
 
 type Lambroll struct {
-	execPath   string
-	dir        string
-	configPath string
+	execPath string
+	dir      string
+
+	functionFilePath string
+	srcPath          string
 
 	options options
 }
 
-func NewLambroll(execPath, dir, configPath string, opts ...Option) *Lambroll {
+func NewLambroll(execPath, dir, functionFilePath, srcPath string, opts ...Option) *Lambroll {
 	opt := options{}
 	for _, o := range opts {
 		o(&opt)
 	}
 
 	return &Lambroll{
-		execPath:   execPath,
-		dir:        dir,
-		configPath: configPath,
-		options:    opt,
+		execPath:         execPath,
+		dir:              dir,
+		functionFilePath: functionFilePath,
+		srcPath:          srcPath,
+		options:          opt,
 	}
 }
 
@@ -51,7 +54,8 @@ func (e *Lambroll) Version(ctx context.Context) (string, error) {
 func (e *Lambroll) Deploy(ctx context.Context, w io.Writer) error {
 	args := []string{
 		"deploy",
-		"--config", e.configPath,
+		"--function", e.functionFilePath,
+		"--src", e.srcPath,
 	}
 
 	cmd := exec.CommandContext(ctx, e.execPath, args...)
@@ -66,6 +70,8 @@ func (e *Lambroll) Deploy(ctx context.Context, w io.Writer) error {
 func (e *Lambroll) Diff(ctx context.Context, w io.Writer) error {
 	args := []string{
 		"diff",
+		"--function", e.functionFilePath,
+		"--src", e.srcPath,
 	}
 
 	cmd := exec.CommandContext(ctx, e.execPath, args...)
