@@ -67,14 +67,15 @@ make run/piped CONFIG_FILE=<YOUR_PIPED_V1_CONFIG_FILE> EXPERIMENTAL=true
 Example of new app config:
 ```yaml
 apiVersion: pipecd.dev/v1beta1
-kind: TerraformApp # for registering an app by pipedv0. This will be ignored in v1.
+kind: Application # In the new config, this can be 'Application'.
 spec:
   name: v1-try-ecspresso
   input: # Depends on plugin
     config: ecspresso.yml
   pipeline:
-    stages:
-      - name: ECSPRESSO_DEPLOY # Define your stages
+    stages: # Define your stages
+      - name: ECSPRESSO_DIFF
+      - name: ECSPRESSO_DEPLOY
 ```
 
 4. Push the app config  -> A new Deployment will be triggered!!
