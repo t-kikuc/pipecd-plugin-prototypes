@@ -2,6 +2,7 @@ package deployment
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"google.golang.org/grpc/codes"
@@ -37,7 +38,7 @@ func (s *DeploymentServiceServer) executeStage(ctx context.Context, slp logpersi
 		appDir: string(input.GetTargetDeploymentSource().GetApplicationDirectory()),
 	}
 
-	slp.Infof("[DEBUG] ### pipedv1 executeStage() > %s ###", input.GetStage().GetName())
+	slp.Infof("[DEBUG sakura-apprun] ### pipedv1 executeStage() > %s xxxxx ###", input.GetStage().GetName())
 
 	switch input.GetStage().GetName() {
 	case stageDeploy.String():
@@ -53,7 +54,8 @@ func (s *DeploymentServiceServer) executeStage(ctx context.Context, slp logpersi
 func (e *deployExecutor) ensureSync(ctx context.Context) model.StageStatus {
 	cli := &apprun.Client{} // Uses env vars by deafult (SAKURACLOUD_ACCESS_TOKEN, SAKURACLOUD_ACCESS_TOKEN_SECRET)
 
-	manifest, err := loadManifest(e.input.ConfigFile)
+	e.slp.Infof("[DEBUG] load manifest from %s/%s ###", e.appDir, e.input.ConfigFile)
+	manifest, err := loadManifest(fmt.Sprintf("%s/%s", e.appDir, e.input.ConfigFile))
 	if err != nil {
 		e.slp.Errorf("Failed to load manifest (%v)", err)
 		return model.StageStatus_STAGE_FAILURE

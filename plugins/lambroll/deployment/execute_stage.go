@@ -53,7 +53,7 @@ func (s *DeploymentServiceServer) executeStage(ctx context.Context, slp logpersi
 		return model.StageStatus_STAGE_FAILURE, err
 	}
 
-	slp.Infof("[DEBUG] ### pipedv1 executeStage() > %s ###", input.GetStage().GetName())
+	slp.Infof("[DEBUG lambroll] ### pipedv1 executeStage() > %s ###", input.GetStage().GetName())
 
 	switch input.GetStage().GetName() {
 	case stageDeploy.String():
