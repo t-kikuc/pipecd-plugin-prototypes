@@ -9,11 +9,14 @@ See [Overview of the Plan for "Pluginnable" PipeCD](https://pipecd.dev/blog/2024
 
 ### Preparation
 
-1. Run pipedv0
-2. Register any one app with pipedv0 on UI and deploy it
+
+1. Run Control Plane
+   1. Use head commmit of master branch of https://github.com/pipe-cd/pipecd.git
+2. Run pipedv0
+3. Register any one app with pipedv0 on UI and deploy it
    1. Because pipedv1 cannot register an app yet...
    2. _Note: Do not specify plugin config in app.pipecd.yaml yet._
-3. Create config of pipedv1
+4. Create config of pipedv1
 
 Example configuration (v0 and v1 compatible):
 ```yaml
