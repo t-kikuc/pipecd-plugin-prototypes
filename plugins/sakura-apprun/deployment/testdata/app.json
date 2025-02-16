@@ -1,0 +1,28 @@
+{
+    "components":
+      [
+        {
+          "deploy_source":
+            {
+              "container_registry":
+                {
+                  "image": "test-apprun.sakuracr.jp/test-apprun:v2",
+                  "password": null,
+                  "server": "test-apprun.sakuracr.jp",
+                  "username": "test-user"
+                }
+            },
+          "env": [],
+          "max_cpu": "1",
+          "max_memory": "512Mi",
+          "name": "test-apprun:v2",
+          "probe": null
+        }
+      ],
+    "max_scale": 1,
+    "min_scale": 0,
+    "name": "app3",
+    "port": 8080,
+    "timeout_seconds": 300
+}
+  

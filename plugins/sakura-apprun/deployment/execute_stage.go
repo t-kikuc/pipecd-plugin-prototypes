@@ -3,11 +3,9 @@ package deployment
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"gopkg.in/yaml.v2"
 
 	config "github.com/pipe-cd/pipecd/pkg/configv1"
 	"github.com/pipe-cd/pipecd/pkg/model"
@@ -61,6 +59,8 @@ func (e *deployExecutor) ensureSync(ctx context.Context) model.StageStatus {
 		return model.StageStatus_STAGE_FAILURE
 	}
 
+	e.slp.Infof("[DEBUG] manifest.patchBody: %+v", manifest.patchBody)
+
 	op := apprun.NewApplicationOp(cli)
 
 	exists, id, err := existsApplication(ctx, op, *manifest.patchBody.Name)
@@ -91,35 +91,6 @@ func (e *deployExecutor) ensureSync(ctx context.Context) model.StageStatus {
 
 func (e *deployExecutor) ensureRollback(ctx context.Context, runningCommitHash string) model.StageStatus {
 	panic("rollbakc is not implemented yet")
-}
-
-type apprunManifest struct {
-	patchBody *v1.PatchApplicationBody
-}
-
-func loadManifest(path string) (*apprunManifest, error) {
-	content, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	var patchBody v1.PatchApplicationBody
-	if err := yaml.Unmarshal(content, &patchBody); err != nil {
-		return nil, err
-	}
-
-	return &apprunManifest{patchBody: &patchBody}, nil
-}
-
-func (m *apprunManifest) toCreateBody() *v1.PostApplicationBody {
-	pb := *m.patchBody
-	return &v1.PostApplicationBody{
-		Name:           *pb.Name,
-		TimeoutSeconds: *pb.TimeoutSeconds,
-		Port:           *pb.Port,
-		MinScale:       *pb.MinScale,
-		MaxScale:       *pb.MaxScale,
-	}
 }
 
 // TODO: Optimize performance
