@@ -11,7 +11,6 @@ import (
 	config "github.com/pipe-cd/pipecd/pkg/configv1"
 	"github.com/pipe-cd/pipecd/pkg/plugin/logpersister"
 	"github.com/pipe-cd/pipecd/pkg/plugin/pipedapi"
-	"github.com/pipe-cd/pipecd/pkg/plugin/toolregistry"
 	"github.com/pipe-cd/pipecd/pkg/rpc"
 	"github.com/pipe-cd/pipecd/pkg/version"
 	"github.com/spf13/cobra"
@@ -112,7 +111,6 @@ func (s *plugin) run(ctx context.Context, input cli.Input) (runErr error) {
 		service, err := deployment.NewDeploymentServiceServer(
 			cfg,
 			input.Logger,
-			toolregistry.NewToolRegistry(pipedapiClient),
 			persister,
 		)
 		if err != nil {
