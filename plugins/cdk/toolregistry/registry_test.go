@@ -16,19 +16,19 @@ func TestRegistry_CDK(t *testing.T) {
 
 	c, err := toolregistrytest.NewToolRegistry(t)
 	require.NoError(t, err)
+	require.NotNil(t, c)
 
 	r := NewRegistry(c)
 
 	t.Cleanup(func() { c.Close() })
 
-	p, err := r.CDK(context.Background(), "v1.1.3")
+	p, err := r.CDK(context.Background(), "v22.13.0", "2.1000.0")
 	require.NoError(t, err)
 	require.NotEmpty(t, p)
 
-	out, err := exec.CommandContext(context.Background(), p, "version").CombinedOutput()
+	out, err := exec.CommandContext(context.Background(), p, "--version").CombinedOutput()
 	require.NoError(t, err)
 
-	expected := "cdk v1.1.3"
-
+	expected := "2.1000.0 (build 1c60bc6)"
 	assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(string(out)))
 }
