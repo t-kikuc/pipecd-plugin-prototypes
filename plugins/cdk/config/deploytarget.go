@@ -9,8 +9,10 @@ import (
 
 // CDKDeployTargetConfig represents PipedDeployTarget.Config for cdk plugin.
 type CDKDeployTargetConfig struct {
-	// Version is the version of cdk to use. e.g. "v1.1.3"
+	// Version is the version of cdk to use. e.g. "2.1001.0"
 	Version string `json:"version"`
+	// NodeVersion is the version of node to use. e.g. "v22.14.0"
+	NodeVersion string `json:"nodeVersion"`
 	// TODO: Add fields if needed.
 }
 

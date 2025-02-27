@@ -13,7 +13,7 @@ import (
 	"github.com/pipe-cd/pipecd/pkg/plugin/api/v1alpha1/deployment"
 	"github.com/pipe-cd/pipecd/pkg/plugin/logpersister"
 	"github.com/pipe-cd/pipecd/pkg/plugin/signalhandler"
-	ecspconfig "github.com/t-kikuc/pipecd-plugin-prototypes/cdk/config"
+	cdkconfig "github.com/t-kikuc/pipecd-plugin-prototypes/cdk/config"
 	"github.com/t-kikuc/pipecd-plugin-prototypes/cdk/toolregistry"
 )
 
@@ -22,7 +22,7 @@ type toolClient interface {
 }
 
 type toolRegistry interface {
-	CDK(ctx context.Context, version string) (path string, err error)
+	CDK(ctx context.Context, nodeVersion, version string) (path string, err error)
 }
 
 type logPersister interface {
@@ -37,7 +37,7 @@ type DeploymentServiceServer struct {
 	pluginConfig *config.PipedPlugin
 	// deployTargetConfig might be empty. e.g. when it's not specified in the piped config.
 	// For now, this plugin supports up to one deploy target.
-	deployTargetConfig ecspconfig.CDKDeployTargetConfig
+	deployTargetConfig cdkconfig.CDKDeployTargetConfig
 
 	logger       *zap.Logger
 	toolRegistry toolRegistry
@@ -53,10 +53,10 @@ func NewDeploymentServiceServer(
 ) (*DeploymentServiceServer, error) {
 	toolRegistry := toolregistry.NewRegistry(toolClient)
 
-	deployTargetConfig := ecspconfig.CDKDeployTargetConfig{}
+	deployTargetConfig := cdkconfig.CDKDeployTargetConfig{}
 	if len(config.DeployTargets) > 0 {
 		var err error
-		if deployTargetConfig, err = ecspconfig.ParseDeployTargetConfig(config.DeployTargets[0]); err != nil {
+		if deployTargetConfig, err = cdkconfig.ParseDeployTargetConfig(config.DeployTargets[0]); err != nil {
 			return nil, err
 		}
 	}
@@ -77,7 +77,7 @@ func (s *DeploymentServiceServer) Register(server *grpc.Server) {
 
 // DetermineStrategy implements deployment.DeploymentServiceServer.
 func (s *DeploymentServiceServer) DetermineStrategy(ctx context.Context, request *deployment.DetermineStrategyRequest) (*deployment.DetermineStrategyResponse, error) {
-	cfg, err := config.DecodeYAML[*ecspconfig.CDKApplicationSpec](request.GetInput().GetTargetDeploymentSource().GetApplicationConfig())
+	cfg, err := config.DecodeYAML[*cdkconfig.CDKApplicationSpec](request.GetInput().GetTargetDeploymentSource().GetApplicationConfig())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

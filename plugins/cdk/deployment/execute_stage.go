@@ -48,7 +48,7 @@ func (s *DeploymentServiceServer) executeStage(ctx context.Context, slp logpersi
 		slp:    slp,
 		appDir: string(input.GetTargetDeploymentSource().GetApplicationDirectory()),
 	}
-	e.cdkPath, err = s.toolRegistry.CDK(ctx, s.deployTargetConfig.Version)
+	e.cdkPath, err = s.toolRegistry.CDK(ctx, s.deployTargetConfig.NodeVersion, s.deployTargetConfig.Version)
 	if err != nil {
 		return model.StageStatus_STAGE_FAILURE, err
 	}
