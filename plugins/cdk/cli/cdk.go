@@ -57,6 +57,10 @@ func (e *CDK) Version(ctx context.Context) (string, error) {
 }
 
 func (e *CDK) Deploy(ctx context.Context, w io.Writer) error {
+	if err := e.npmInstall(ctx, w); err != nil {
+		return err
+	}
+
 	args := []string{
 		"deploy",
 		"--stacks", e.stacks,
@@ -77,6 +81,10 @@ func (e *CDK) Deploy(ctx context.Context, w io.Writer) error {
 }
 
 func (e *CDK) Diff(ctx context.Context, w io.Writer) error {
+	if err := e.npmInstall(ctx, w); err != nil {
+		return err
+	}
+
 	args := []string{
 		"diff",
 		"--stacks", e.stacks,
@@ -91,5 +99,16 @@ func (e *CDK) Diff(ctx context.Context, w io.Writer) error {
 	cmd.Stderr = w
 
 	fmt.Fprintf(w, "execute 'cdk %s'\n", strings.Join(args, " "))
+	return cmd.Run()
+}
+
+// FIXME: Use npm installed by toolregistry
+func (e *CDK) npmInstall(ctx context.Context, w io.Writer) error {
+	cmd := exec.CommandContext(ctx, "npm", "install")
+	cmd.Dir = e.dir
+	cmd.Stdout = w
+	cmd.Stderr = w
+
+	fmt.Fprintf(w, "execute 'npm install'\n")
 	return cmd.Run()
 }
