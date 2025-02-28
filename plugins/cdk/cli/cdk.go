@@ -17,29 +17,24 @@ type CDK struct {
 	execPath string
 	dir      string
 
-	functionFilePath string
-	srcPath          string
-
 	options options
 }
 
-func NewCDK(execPath, dir, functionFilePath, srcPath string, opts ...Option) *CDK {
+func NewCDK(execPath, dir string, opts ...Option) *CDK {
 	opt := options{}
 	for _, o := range opts {
 		o(&opt)
 	}
 
 	return &CDK{
-		execPath:         execPath,
-		dir:              dir,
-		functionFilePath: functionFilePath,
-		srcPath:          srcPath,
-		options:          opt,
+		execPath: execPath,
+		dir:      dir,
+		options:  opt,
 	}
 }
 
 func (e *CDK) Version(ctx context.Context) (string, error) {
-	args := []string{"version"}
+	args := []string{"--version"}
 	cmd := exec.CommandContext(ctx, e.execPath, args...)
 	cmd.Dir = e.dir
 
@@ -54,8 +49,6 @@ func (e *CDK) Version(ctx context.Context) (string, error) {
 func (e *CDK) Deploy(ctx context.Context, w io.Writer) error {
 	args := []string{
 		"deploy",
-		"--function", e.functionFilePath,
-		"--src", e.srcPath,
 	}
 
 	cmd := exec.CommandContext(ctx, e.execPath, args...)
@@ -70,8 +63,6 @@ func (e *CDK) Deploy(ctx context.Context, w io.Writer) error {
 func (e *CDK) Diff(ctx context.Context, w io.Writer) error {
 	args := []string{
 		"diff",
-		"--function", e.functionFilePath,
-		"--src", e.srcPath,
 	}
 
 	cmd := exec.CommandContext(ctx, e.execPath, args...)

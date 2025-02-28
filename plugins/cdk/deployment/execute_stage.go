@@ -25,8 +25,6 @@ func (e *deployExecutor) initCDKCommand(ctx context.Context) (cmd *cli.CDK, ok b
 	cmd = cli.NewCDK(
 		e.cdkPath,
 		e.appDir,
-		e.input.FunctionFile,
-		e.input.Source,
 	)
 
 	if ok := showUsingVersion(ctx, cmd, e.slp); !ok {
