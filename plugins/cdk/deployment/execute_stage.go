@@ -11,18 +11,22 @@ import (
 	"github.com/pipe-cd/pipecd/pkg/plugin/api/v1alpha1/deployment"
 	"github.com/pipe-cd/pipecd/pkg/plugin/logpersister"
 	"github.com/t-kikuc/pipecd-plugin-prototypes/cdk/cli"
+	cdkconfig "github.com/t-kikuc/pipecd-plugin-prototypes/cdk/config"
 	ecspconfig "github.com/t-kikuc/pipecd-plugin-prototypes/cdk/config"
 )
 
 type deployExecutor struct {
-	appDir  string
-	cdkPath string
-	input   ecspconfig.CDKDeploymentInput
-	slp     logpersister.StageLogPersister
+	appDir             string
+	cdkPath            string
+	input              ecspconfig.CDKDeploymentInput
+	slp                logpersister.StageLogPersister
+	deployTargetConfig cdkconfig.CDKDeployTargetConfig
 }
 
 func (e *deployExecutor) initCDKCommand(ctx context.Context) (cmd *cli.CDK, ok bool) {
 	cmd = cli.NewCDK(
+		e.deployTargetConfig.Region,
+		e.deployTargetConfig.Profile,
 		e.cdkPath,
 		e.appDir,
 	)
@@ -42,9 +46,10 @@ func (s *DeploymentServiceServer) executeStage(ctx context.Context, slp logpersi
 	}
 
 	e := &deployExecutor{
-		input:  cfg.Spec.Input,
-		slp:    slp,
-		appDir: string(input.GetTargetDeploymentSource().GetApplicationDirectory()),
+		input:              cfg.Spec.Input,
+		slp:                slp,
+		deployTargetConfig: s.deployTargetConfig,
+		appDir:             string(input.GetTargetDeploymentSource().GetApplicationDirectory()),
 	}
 	e.cdkPath, err = s.toolRegistry.CDK(ctx, s.deployTargetConfig.NodeVersion, s.deployTargetConfig.Version)
 	if err != nil {

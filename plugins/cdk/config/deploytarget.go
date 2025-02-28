@@ -13,6 +13,11 @@ type CDKDeployTargetConfig struct {
 	Version string `json:"version"`
 	// NodeVersion is the version of node to use. e.g. "v22.14.0"
 	NodeVersion string `json:"nodeVersion"`
+	// Region is the AWS region to deploy to. e.g. "us-east-1"
+	Region string `json:"region"`
+	// Profile is the AWS profile to use. e.g. "my-profile"
+	Profile string `json:"profile"`
+
 	// TODO: Add fields if needed.
 }
 
