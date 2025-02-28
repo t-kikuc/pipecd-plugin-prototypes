@@ -12,13 +12,12 @@ import (
 	"github.com/pipe-cd/pipecd/pkg/plugin/logpersister"
 	"github.com/t-kikuc/pipecd-plugin-prototypes/cdk/cli"
 	cdkconfig "github.com/t-kikuc/pipecd-plugin-prototypes/cdk/config"
-	ecspconfig "github.com/t-kikuc/pipecd-plugin-prototypes/cdk/config"
 )
 
 type deployExecutor struct {
 	appDir             string
 	cdkPath            string
-	input              ecspconfig.CDKDeploymentInput
+	input              cdkconfig.CDKDeploymentInput
 	slp                logpersister.StageLogPersister
 	deployTargetConfig cdkconfig.CDKDeployTargetConfig
 }
@@ -39,7 +38,7 @@ func (e *deployExecutor) initCDKCommand(ctx context.Context) (cmd *cli.CDK, ok b
 }
 
 func (s *DeploymentServiceServer) executeStage(ctx context.Context, slp logpersister.StageLogPersister, input *deployment.ExecutePluginInput) (model.StageStatus, error) {
-	cfg, err := config.DecodeYAML[*ecspconfig.CDKApplicationSpec](input.GetTargetDeploymentSource().GetApplicationConfig())
+	cfg, err := config.DecodeYAML[*cdkconfig.CDKApplicationSpec](input.GetTargetDeploymentSource().GetApplicationConfig())
 	if err != nil {
 		slp.Errorf("Failed while decoding application config (%v)", err)
 		return model.StageStatus_STAGE_FAILURE, err
