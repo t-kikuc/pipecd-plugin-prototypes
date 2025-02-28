@@ -63,7 +63,7 @@ func (e *CDK) Deploy(ctx context.Context, w io.Writer) error {
 
 	args := []string{
 		"deploy",
-		"--stacks", e.stacks,
+		e.stacks,
 		"--contexts", e.contexts,
 		"--require-approval", "never", // Skip approval for security-sensitive changes
 		// "--no-rollback",
@@ -87,7 +87,7 @@ func (e *CDK) Diff(ctx context.Context, w io.Writer) error {
 
 	args := []string{
 		"diff",
-		"--stacks", e.stacks,
+		e.stacks,
 		"--contexts", e.contexts,
 		"--region", e.region,
 		"--profile", e.profile,
