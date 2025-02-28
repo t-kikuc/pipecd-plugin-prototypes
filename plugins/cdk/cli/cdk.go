@@ -14,6 +14,9 @@ type options struct {
 type Option func(*options)
 
 type CDK struct {
+	stacks   string
+	contexts string
+
 	region  string
 	profile string
 
@@ -23,13 +26,15 @@ type CDK struct {
 	options options
 }
 
-func NewCDK(region, profile, execPath, dir string, opts ...Option) *CDK {
+func NewCDK(stacks, contexts []string, region, profile, execPath, dir string, opts ...Option) *CDK {
 	opt := options{}
 	for _, o := range opts {
 		o(&opt)
 	}
 
 	return &CDK{
+		stacks:   strings.Join(stacks, " "),
+		contexts: strings.Join(contexts, " --context "),
 		region:   region,
 		profile:  profile,
 		execPath: execPath,
@@ -54,6 +59,8 @@ func (e *CDK) Version(ctx context.Context) (string, error) {
 func (e *CDK) Deploy(ctx context.Context, w io.Writer) error {
 	args := []string{
 		"deploy",
+		"--stacks", e.stacks,
+		"--contexts", e.contexts,
 		"--require-approval", "never", // Skip approval for security-sensitive changes
 		// "--no-rollback",
 		"--region", e.region,
@@ -72,6 +79,8 @@ func (e *CDK) Deploy(ctx context.Context, w io.Writer) error {
 func (e *CDK) Diff(ctx context.Context, w io.Writer) error {
 	args := []string{
 		"diff",
+		"--stacks", e.stacks,
+		"--contexts", e.contexts,
 		"--region", e.region,
 		"--profile", e.profile,
 	}

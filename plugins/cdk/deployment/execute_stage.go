@@ -24,6 +24,8 @@ type deployExecutor struct {
 
 func (e *deployExecutor) initCDKCommand(ctx context.Context) (cmd *cli.CDK, ok bool) {
 	cmd = cli.NewCDK(
+		e.input.Stacks,
+		e.input.Contexts,
 		e.deployTargetConfig.Region,
 		e.deployTargetConfig.Profile,
 		e.cdkPath,

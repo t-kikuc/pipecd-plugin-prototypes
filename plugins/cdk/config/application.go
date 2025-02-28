@@ -21,6 +21,12 @@ func (s *CDKApplicationSpec) Validate() error {
 }
 
 type CDKDeploymentInput struct {
+	// Stacks is the list of stacks to deploy.
+	// If you want to deploy all stacks, set "--all".
+	Stacks []string `json:"stacks"`
+	// Contexts is the list of context to pass to the cdk deploy command.
+	// Each context is a key-value pair like "bucketName=my-bucket"
+	Contexts []string `json:"contexts"`
 }
 
 func (i *CDKDeploymentInput) validate() error {
@@ -29,12 +35,6 @@ func (i *CDKDeploymentInput) validate() error {
 
 // CDKDeployStageOptions contains all configurable values for a CDK_SYNC stage.
 type CDKDeployStageOptions struct {
-	// Stacks is the list of stacks to deploy.
-	// If you want to deploy all stacks, set "--all".
-	Stacks []string `json:"stacks"`
-	// Parameters is the list of parameters to pass to the cdk deploy command.
-	// Each parameter is a key-value pair like "bucketName=my-bucket"
-	Parameters []string `json:"parameters"`
 }
 
 // CDKDiffStageOptions contains all configurable values for a CDK_PLAN stage.
