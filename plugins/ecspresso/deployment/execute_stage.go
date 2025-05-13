@@ -26,7 +26,7 @@ func (e *deployExecutor) initEcspressoCommand(ctx context.Context) (cmd *cli.Ecs
 		e.input.Config,
 	)
 
-	if ok := showUsingVersion(ctx, cmd, e.slp); !ok {
+	if ok := showCommandVersion(ctx, cmd, e.slp); !ok {
 		return nil, false
 	}
 
@@ -113,7 +113,7 @@ func (e *deployExecutor) ensureRollback(ctx context.Context, runningCommitHash s
 	return sdk.StageStatusSuccess
 }
 
-func showUsingVersion(ctx context.Context, cmd *cli.Ecspresso, slp sdk.StageLogPersister) (ok bool) {
+func showCommandVersion(ctx context.Context, cmd *cli.Ecspresso, slp sdk.StageLogPersister) (ok bool) {
 	version, err := cmd.Version(ctx)
 	if err != nil {
 		slp.Errorf("Failed to check ecspresso version (%v)", err)
