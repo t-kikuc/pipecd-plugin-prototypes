@@ -10,8 +10,8 @@ import (
 	"github.com/pipe-cd/pipecd/pkg/model"
 	"github.com/pipe-cd/pipecd/pkg/plugin/api/v1alpha1/deployment"
 	"github.com/pipe-cd/pipecd/pkg/plugin/logpersister"
-	"github.com/t-kikuc/pipecd-plugin-prototypes/ecspresso/cli"
-	ecspconfig "github.com/t-kikuc/pipecd-plugin-prototypes/ecspresso/config"
+	"github.com/t-kikuc/pipecd-plugin-prototypes/ecspresso_old/cli"
+	ecspconfig "github.com/t-kikuc/pipecd-plugin-prototypes/ecspresso_old/config"
 )
 
 type deployExecutor struct {
