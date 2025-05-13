@@ -72,7 +72,7 @@ func TestBuildQuickSyncStages(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			actual, err := BuildQuickSyncStages(&sdk.BuildQuickSyncStagesInput{
+			actual, err := buildQuickSyncStages(&sdk.BuildQuickSyncStagesInput{
 				Request: sdk.BuildQuickSyncStagesRequest{
 					Rollback: tt.autoRollback,
 				},
@@ -189,7 +189,7 @@ func TestBuildPipelineStages(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			actual, err := BuildPipelineSyncStages(&sdk.BuildPipelineSyncStagesInput{
+			actual, err := buildPipelineSyncStages(&sdk.BuildPipelineSyncStagesInput{
 				Request: sdk.BuildPipelineSyncStagesRequest{
 					Stages:   tt.stages,
 					Rollback: tt.autoRollback,

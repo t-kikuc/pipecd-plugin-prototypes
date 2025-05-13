@@ -15,7 +15,7 @@ const (
 	stageEcspressoRollback = "ECSPRESSO_ROLLBACK"
 )
 
-func DetermineVersions(input *sdk.DetermineVersionsInput[ecspressoconfig.EcspressoApplicationSpec]) (*sdk.DetermineVersionsResponse, error) {
+func determineVersions(input *sdk.DetermineVersionsInput[ecspressoconfig.EcspressoApplicationSpec]) (*sdk.DetermineVersionsResponse, error) {
 	// TODO implement
 	return &sdk.DetermineVersionsResponse{
 		Versions: []sdk.ArtifactVersion{
@@ -29,14 +29,14 @@ func DetermineVersions(input *sdk.DetermineVersionsInput[ecspressoconfig.Ecspres
 	}, nil
 }
 
-func DetermineStrategy() (*sdk.DetermineStrategyResponse, error) {
+func determineStrategy() (*sdk.DetermineStrategyResponse, error) {
 	return &sdk.DetermineStrategyResponse{
 		Strategy: sdk.SyncStrategyPipelineSync,
 		Summary:  "PipelineSync with the specified pipeline",
 	}, nil
 }
 
-func BuildQuickSyncStages(input *sdk.BuildQuickSyncStagesInput) (*sdk.BuildQuickSyncStagesResponse, error) {
+func buildQuickSyncStages(input *sdk.BuildQuickSyncStagesInput) (*sdk.BuildQuickSyncStagesResponse, error) {
 	stages := make([]sdk.QuickSyncStage, 0, 2)
 
 	stages = append(stages, sdk.QuickSyncStage{
@@ -63,7 +63,7 @@ func BuildQuickSyncStages(input *sdk.BuildQuickSyncStagesInput) (*sdk.BuildQuick
 	}, nil
 }
 
-func BuildPipelineSyncStages(input *sdk.BuildPipelineSyncStagesInput) (*sdk.BuildPipelineSyncStagesResponse, error) {
+func buildPipelineSyncStages(input *sdk.BuildPipelineSyncStagesInput) (*sdk.BuildPipelineSyncStagesResponse, error) {
 	stages := make([]sdk.PipelineStage, 0, len(input.Request.Stages))
 	for _, rs := range input.Request.Stages {
 		stage := sdk.PipelineStage{
@@ -89,7 +89,7 @@ func BuildPipelineSyncStages(input *sdk.BuildPipelineSyncStagesInput) (*sdk.Buil
 	}, nil
 }
 
-func FetchDefinedStages() []string {
+func fetchDefinedStages() []string {
 	return []string{
 		stageEcspressoDeploy,
 		stageEcspressoDiff,
