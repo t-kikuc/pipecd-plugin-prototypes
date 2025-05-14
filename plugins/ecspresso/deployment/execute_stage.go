@@ -8,14 +8,14 @@ import (
 
 	"github.com/pipe-cd/pipecd/pkg/plugin/sdk"
 	"github.com/t-kikuc/pipecd-plugin-prototypes/ecspresso/cli"
-	ecspressoconfig "github.com/t-kikuc/pipecd-plugin-prototypes/ecspresso/config"
+	"github.com/t-kikuc/pipecd-plugin-prototypes/ecspresso/config"
 	"github.com/t-kikuc/pipecd-plugin-prototypes/ecspresso/toolregistry"
 )
 
 type deployExecutor struct {
 	appDir        string
 	ecspressoPath string
-	input         ecspressoconfig.EcspressoDeploymentInput
+	input         config.EcspressoDeploymentInput
 	slp           sdk.StageLogPersister
 }
 
@@ -33,7 +33,7 @@ func (e *deployExecutor) initEcspressoCommand(ctx context.Context) (cmd *cli.Ecs
 	return cmd, true
 }
 
-func (p *Plugin) executeStage(ctx context.Context, input *sdk.ExecuteStageInput[ecspressoconfig.EcspressoApplicationSpec], dts []*sdk.DeployTarget[ecspressoconfig.EcspressoDeployTargetConfig]) (sdk.StageStatus, error) {
+func (p *Plugin) executeStage(ctx context.Context, input *sdk.ExecuteStageInput[config.EcspressoApplicationSpec], dts []*sdk.DeployTarget[config.EcspressoDeployTargetConfig]) (sdk.StageStatus, error) {
 	toolRegistry := toolregistry.NewRegistry(input.Client.ToolRegistry())
 	req := input.Request
 

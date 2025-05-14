@@ -2,7 +2,7 @@ package deployment
 
 import (
 	"github.com/pipe-cd/pipecd/pkg/plugin/sdk"
-	ecspressoconfig "github.com/t-kikuc/pipecd-plugin-prototypes/ecspresso/config"
+	"github.com/t-kikuc/pipecd-plugin-prototypes/ecspresso/config"
 )
 
 const (
@@ -15,18 +15,9 @@ const (
 	stageEcspressoRollback = "ECSPRESSO_ROLLBACK"
 )
 
-func determineVersions(input *sdk.DetermineVersionsInput[ecspressoconfig.EcspressoApplicationSpec]) (*sdk.DetermineVersionsResponse, error) {
-	// TODO implement
-	return &sdk.DetermineVersionsResponse{
-		Versions: []sdk.ArtifactVersion{
-			{
-				Kind:    sdk.ArtifactKindUnknown,
-				Version: "0.0.1",
-				Name:    "ecspresso",
-				URL:     "TODO",
-			},
-		},
-	}, nil
+func determineVersions(input *sdk.DetermineVersionsInput[config.EcspressoApplicationSpec]) (*sdk.DetermineVersionsResponse, error) {
+	// TODO Implement here by (1) loading taskdef and (2) extracting artifact versions by ecs.ExtractArtifactVersions().
+	return nil, nil
 }
 
 func determineStrategy() (*sdk.DetermineStrategyResponse, error) {
