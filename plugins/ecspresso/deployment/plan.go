@@ -17,7 +17,7 @@ const (
 
 func determineVersions(input *sdk.DetermineVersionsInput[config.EcspressoApplicationSpec]) (*sdk.DetermineVersionsResponse, error) {
 	// TODO Implement here by (1) loading taskdef and (2) extracting artifact versions by ecs.ExtractArtifactVersions().
-	return nil, nil
+	return &sdk.DetermineVersionsResponse{}, nil
 }
 
 func determineStrategy() (*sdk.DetermineStrategyResponse, error) {
