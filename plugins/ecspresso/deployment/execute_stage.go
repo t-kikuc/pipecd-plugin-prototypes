@@ -6,19 +6,17 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	config "github.com/pipe-cd/pipecd/pkg/configv1"
-	"github.com/pipe-cd/pipecd/pkg/model"
-	"github.com/pipe-cd/pipecd/pkg/plugin/api/v1alpha1/deployment"
-	"github.com/pipe-cd/pipecd/pkg/plugin/logpersister"
+	"github.com/pipe-cd/pipecd/pkg/plugin/sdk"
 	"github.com/t-kikuc/pipecd-plugin-prototypes/ecspresso/cli"
-	ecspconfig "github.com/t-kikuc/pipecd-plugin-prototypes/ecspresso/config"
+	"github.com/t-kikuc/pipecd-plugin-prototypes/ecspresso/config"
+	"github.com/t-kikuc/pipecd-plugin-prototypes/ecspresso/toolregistry"
 )
 
 type deployExecutor struct {
 	appDir        string
 	ecspressoPath string
-	input         ecspconfig.EcspressoDeploymentInput
-	slp           logpersister.StageLogPersister
+	input         config.EcspressoDeploymentInput
+	slp           sdk.StageLogPersister
 }
 
 func (e *deployExecutor) initEcspressoCommand(ctx context.Context) (cmd *cli.Ecspresso, ok bool) {
@@ -28,99 +26,94 @@ func (e *deployExecutor) initEcspressoCommand(ctx context.Context) (cmd *cli.Ecs
 		e.input.Config,
 	)
 
-	if ok := showUsingVersion(ctx, cmd, e.slp); !ok {
+	if ok := showCommandVersion(ctx, cmd, e.slp); !ok {
 		return nil, false
 	}
 
 	return cmd, true
 }
 
-func (s *DeploymentServiceServer) executeStage(ctx context.Context, slp logpersister.StageLogPersister, input *deployment.ExecutePluginInput) (model.StageStatus, error) {
-	cfg, err := config.DecodeYAML[*ecspconfig.EcspressoApplicationSpec](input.GetTargetDeploymentSource().GetApplicationConfig())
-	if err != nil {
-		slp.Errorf("Failed while decoding application config (%v)", err)
-		return model.StageStatus_STAGE_FAILURE, err
-	}
+func (p *Plugin) executeStage(ctx context.Context, input *sdk.ExecuteStageInput[config.EcspressoApplicationSpec], dts []*sdk.DeployTarget[config.EcspressoDeployTargetConfig]) (sdk.StageStatus, error) {
+	toolRegistry := toolregistry.NewRegistry(input.Client.ToolRegistry())
+	req := input.Request
 
 	e := &deployExecutor{
-		input:  cfg.Spec.Input,
-		slp:    slp,
-		appDir: string(input.GetTargetDeploymentSource().GetApplicationDirectory()),
+		// input:  req.
+		slp:    input.Client.LogPersister(),
+		appDir: string(req.TargetDeploymentSource.ApplicationDirectory),
 	}
-	e.ecspressoPath, err = s.toolRegistry.Ecspresso(ctx, s.deployTargetConfig.Version)
+	var err error
+	e.ecspressoPath, err = toolRegistry.Ecspresso(ctx, dts[0].Config.Version)
 	if err != nil {
-		return model.StageStatus_STAGE_FAILURE, err
+		return sdk.StageStatusFailure, err
 	}
 
-	slp.Infof("[DEBUG] ### pipedv1 executeStage() ###")
-
-	switch input.GetStage().GetName() {
-	case stageEcspressoDeploy.String():
+	switch req.StageName {
+	case stageEcspressoDeploy:
 		return e.ensureSync(ctx), nil
-	case stageEcspressoDiff.String():
+	case stageEcspressoDiff:
 		return e.ensureDiff(ctx), nil
-	case stageEcspressoRollback.String():
-		e.appDir = string(input.GetRunningDeploymentSource().GetApplicationDirectory())
-		return e.ensureRollback(ctx, input.GetDeployment().GetRunningCommitHash()), nil
+	case stageEcspressoRollback:
+		return e.ensureRollback(ctx, req.RunningDeploymentSource.CommitHash), nil
 	default:
-		return model.StageStatus_STAGE_FAILURE, status.Error(codes.InvalidArgument, "unsupported stage")
+		return sdk.StageStatusFailure, status.Error(codes.InvalidArgument, "unsupported stage")
 	}
 }
 
-func (e *deployExecutor) ensureSync(ctx context.Context) model.StageStatus {
+func (e *deployExecutor) ensureSync(ctx context.Context) sdk.StageStatus {
 	cmd, ok := e.initEcspressoCommand(ctx)
 	if !ok {
-		return model.StageStatus_STAGE_FAILURE
+		return sdk.StageStatusFailure
 	}
 
 	if err := cmd.Deploy(ctx, e.slp); err != nil {
 		e.slp.Errorf("Failed to apply changes (%v)", err)
-		return model.StageStatus_STAGE_FAILURE
+		return sdk.StageStatusFailure
 	}
 
 	e.slp.Success("Successfully applied changes")
-	return model.StageStatus_STAGE_SUCCESS
+	return sdk.StageStatusSuccess
 }
 
-func (e *deployExecutor) ensureDiff(ctx context.Context) model.StageStatus {
+func (e *deployExecutor) ensureDiff(ctx context.Context) sdk.StageStatus {
 	cmd, ok := e.initEcspressoCommand(ctx)
 	if !ok {
-		return model.StageStatus_STAGE_FAILURE
+		return sdk.StageStatusFailure
 	}
 
 	if err := cmd.Diff(ctx, e.slp); err != nil {
 		e.slp.Errorf("Failed to apply changes (%v)", err)
-		return model.StageStatus_STAGE_FAILURE
+		return sdk.StageStatusFailure
 	}
 
 	e.slp.Success("Successfully executed 'diff'")
-	return model.StageStatus_STAGE_SUCCESS
+	return sdk.StageStatusSuccess
 }
 
-func (e *deployExecutor) ensureRollback(ctx context.Context, runningCommitHash string) model.StageStatus {
-	// There is nothing to do if this is the first deployment.
+func (e *deployExecutor) ensureRollback(ctx context.Context, runningCommitHash string) sdk.StageStatus {
+	// Nothing to do if this is the first deployment.
 	if runningCommitHash == "" {
 		e.slp.Errorf("Unable to determine the last deployed commit to rollback. It seems this is the first deployment.")
-		return model.StageStatus_STAGE_FAILURE
+		return sdk.StageStatusFailure
 	}
 
 	e.slp.Infof("Start rolling back to the state defined at commit %s", runningCommitHash)
 
 	cmd, ok := e.initEcspressoCommand(ctx)
 	if !ok {
-		return model.StageStatus_STAGE_FAILURE
+		return sdk.StageStatusFailure
 	}
 
 	if err := cmd.Deploy(ctx, e.slp); err != nil {
 		e.slp.Errorf("Failed to apply changes (%v)", err)
-		return model.StageStatus_STAGE_FAILURE
+		return sdk.StageStatusFailure
 	}
 
 	e.slp.Success("Successfully rolled back the changes")
-	return model.StageStatus_STAGE_SUCCESS
+	return sdk.StageStatusSuccess
 }
 
-func showUsingVersion(ctx context.Context, cmd *cli.Ecspresso, slp logpersister.StageLogPersister) (ok bool) {
+func showCommandVersion(ctx context.Context, cmd *cli.Ecspresso, slp sdk.StageLogPersister) (ok bool) {
 	version, err := cmd.Version(ctx)
 	if err != nil {
 		slp.Errorf("Failed to check ecspresso version (%v)", err)

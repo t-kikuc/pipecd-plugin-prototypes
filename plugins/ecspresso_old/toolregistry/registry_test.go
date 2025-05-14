@@ -14,9 +14,12 @@ import (
 func TestRegistry_Ecspresso(t *testing.T) {
 	t.Parallel()
 
-	c := toolregistrytest.NewTestToolRegistry(t)
+	c, err := toolregistrytest.NewToolRegistry(t)
+	require.NoError(t, err)
 
 	r := NewRegistry(c)
+
+	t.Cleanup(func() { c.Close() })
 
 	p, err := r.Ecspresso(context.Background(), "2.4.5")
 	require.NoError(t, err)
