@@ -1,12 +1,24 @@
 package config
 
-import (
-	config "github.com/pipe-cd/pipecd/pkg/configv1"
-)
+// Config represents the plugin-scoped configuration.
+// type Config struct{}
+
+// CDKDeployTargetConfig represents PipedDeployTarget.Config for cdk plugin.
+type CDKDeployTargetConfig struct {
+	// Version is the version of cdk to use. e.g. "2.1001.0"
+	Version string `json:"version"`
+	// NodeVersion is the version of node to use. e.g. "v22.14.0"
+	NodeVersion string `json:"nodeVersion"`
+	// Region is the AWS region to deploy to. e.g. "us-east-1"
+	Region string `json:"region"`
+	// Profile is the AWS profile to use. e.g. "my-profile"
+	Profile string `json:"profile"`
+
+	// TODO: Add fields if needed.
+}
 
 // CDKApplicationSpec represents an application configuration for cdk application.
 type CDKApplicationSpec struct {
-	config.GenericApplicationSpec
 	// Input for cdk deployment. e.g. cdk version
 	Input CDKDeploymentInput `json:"input"`
 	// Configuration for quick sync.
