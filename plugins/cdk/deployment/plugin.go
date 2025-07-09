@@ -108,11 +108,13 @@ func (p *Plugin) ExecuteStage(ctx context.Context, _ *sdk.ConfigNone, dts []*sdk
 			Status: executeDeploy(ctx, dts[0], input),
 		}, nil
 	case stageDiff:
-		panic("unimplemented")
-		// return executeDiff(ctx, dts[0], input)
+		return &sdk.ExecuteStageResponse{
+			Status: executeDiff(ctx, dts[0], input),
+		}, nil
 	case stageRollback:
-		panic("unimplemented")
-		// return executeRollback(ctx, dts[0], input)
+		return &sdk.ExecuteStageResponse{
+			Status: executeRollback(ctx, dts[0], input),
+		}, nil
 	default:
 		return nil, fmt.Errorf("unknown stage: %s", input.Request.StageName)
 	}
