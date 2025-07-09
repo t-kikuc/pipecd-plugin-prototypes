@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pipe-cd/pipecd/pkg/plugin/toolregistry/toolregistrytest"
+	"github.com/pipe-cd/piped-plugin-sdk-go/toolregistry/toolregistrytest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -14,13 +14,10 @@ import (
 func TestRegistry_CDK(t *testing.T) {
 	t.Parallel()
 
-	c, err := toolregistrytest.NewToolRegistry(t)
-	require.NoError(t, err)
+	c := toolregistrytest.NewTestToolRegistry(t)
 	require.NotNil(t, c)
 
 	r := NewRegistry(c)
-
-	t.Cleanup(func() { c.Close() })
 
 	p, err := r.CDK(context.Background(), "v22.13.0", "2.1000.0")
 	require.NoError(t, err)

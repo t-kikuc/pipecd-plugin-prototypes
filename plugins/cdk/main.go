@@ -3,18 +3,20 @@ package main
 import (
 	"log"
 
-	"github.com/pipe-cd/pipecd/pkg/cli"
+	"github.com/t-kikuc/pipecd-plugin-prototypes/cdk/deployment"
+
+	sdk "github.com/pipe-cd/piped-plugin-sdk-go"
 )
 
 func main() {
-	app := cli.NewApp(
-		"pipecd-plugin-cdk-prototype",
-		"Plugin component to deploy Lambda functions by cdk.",
+	plugin, err := sdk.NewPlugin(
+		"0.0.1",
+		sdk.WithDeploymentPlugin(&deployment.Plugin{}),
 	)
-	app.AddCommands(
-		newPluginCommand(),
-	)
-	if err := app.Run(); err != nil {
-		log.Fatal(err)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	if err := plugin.Run(); err != nil {
+		log.Fatalln(err)
 	}
 }

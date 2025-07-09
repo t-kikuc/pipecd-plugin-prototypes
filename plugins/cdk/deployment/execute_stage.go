@@ -3,134 +3,39 @@ package deployment
 import (
 	"context"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	sdk "github.com/pipe-cd/piped-plugin-sdk-go"
 
-	config "github.com/pipe-cd/pipecd/pkg/configv1"
-	"github.com/pipe-cd/pipecd/pkg/model"
-	"github.com/pipe-cd/pipecd/pkg/plugin/api/v1alpha1/deployment"
-	"github.com/pipe-cd/pipecd/pkg/plugin/logpersister"
 	"github.com/t-kikuc/pipecd-plugin-prototypes/cdk/cli"
-	cdkconfig "github.com/t-kikuc/pipecd-plugin-prototypes/cdk/config"
+	config "github.com/t-kikuc/pipecd-plugin-prototypes/cdk/config"
 )
 
-type deployExecutor struct {
-	appDir             string
-	cdkPath            string
-	input              cdkconfig.CDKDeploymentInput
-	slp                logpersister.StageLogPersister
-	deployTargetConfig cdkconfig.CDKDeployTargetConfig
-}
+func executeDeploy(
+	ctx context.Context,
+	dt *sdk.DeployTarget[config.DeployTargetConfig],
+	input *sdk.ExecuteStageInput[config.ApplicationSpec],
+) sdk.StageStatus {
+	lp := input.Client.LogPersister()
+	specInput := input.Request.TargetDeploymentSource.ApplicationConfig.Spec.Input
 
-func (e *deployExecutor) initCDKCommand(ctx context.Context) (cmd *cli.CDK, ok bool) {
-	cmd = cli.NewCDK(
-		e.input.Stacks,
-		e.input.Contexts,
-		e.deployTargetConfig.Region,
-		e.deployTargetConfig.Profile,
-		e.cdkPath,
-		e.appDir,
-	)
-
-	if ok := showUsingVersion(ctx, cmd, e.slp); !ok {
-		return nil, false
-	}
-
-	return cmd, true
-}
-
-func (s *DeploymentServiceServer) executeStage(ctx context.Context, slp logpersister.StageLogPersister, input *deployment.ExecutePluginInput) (model.StageStatus, error) {
-	cfg, err := config.DecodeYAML[*cdkconfig.CDKApplicationSpec](input.GetTargetDeploymentSource().GetApplicationConfig())
+	cdkCmd, err := cli.NewCDK(ctx, input.Client.ToolRegistry(), input.Request.TargetDeploymentSource.ApplicationDirectory, dt.Config)
 	if err != nil {
-		slp.Errorf("Failed while decoding application config (%v)", err)
-		return model.StageStatus_STAGE_FAILURE, err
+		lp.Errorf("failed to create cdk command: %v", err)
+		return sdk.StageStatusFailure
 	}
 
-	e := &deployExecutor{
-		input:              cfg.Spec.Input,
-		slp:                slp,
-		deployTargetConfig: s.deployTargetConfig,
-		appDir:             string(input.GetTargetDeploymentSource().GetApplicationDirectory()),
-	}
-	e.cdkPath, err = s.toolRegistry.CDK(ctx, s.deployTargetConfig.NodeVersion, s.deployTargetConfig.Version)
-	if err != nil {
-		return model.StageStatus_STAGE_FAILURE, err
-	}
+	// Get application config
+	// TODO: uncomment after defining fields in CDKDeployStageOptions.
+	// var stageCfg config.CDKDeployStageOptions
+	// if err := json.Unmarshal(req.StageConfig, &stageCfg); err != nil {
+	// 	lp.Errorf("failed to decode stage config: %v", err)
+	// 	return sdk.StageStatusFailure
+	// }
 
-	slp.Infof("[DEBUG cdk] ### pipedv1 executeStage() > %s ###", input.GetStage().GetName())
-
-	switch input.GetStage().GetName() {
-	case stageDeploy.String():
-		return e.ensureSync(ctx), nil
-	case stageDiff.String():
-		return e.ensureDiff(ctx), nil
-	case stageRollback.String():
-		e.appDir = string(input.GetRunningDeploymentSource().GetApplicationDirectory())
-		return e.ensureRollback(ctx, input.GetDeployment().GetRunningCommitHash()), nil
-	default:
-		return model.StageStatus_STAGE_FAILURE, status.Error(codes.InvalidArgument, "unsupported stage")
-	}
-}
-
-func (e *deployExecutor) ensureSync(ctx context.Context) model.StageStatus {
-	cmd, ok := e.initCDKCommand(ctx)
-	if !ok {
-		return model.StageStatus_STAGE_FAILURE
+	if err := cdkCmd.Deploy(ctx, lp, specInput); err != nil {
+		lp.Errorf("failed to execute 'cdk deploy': %v", err)
+		return sdk.StageStatusFailure
 	}
 
-	if err := cmd.Deploy(ctx, e.slp); err != nil {
-		e.slp.Errorf("Failed to apply changes (%v)", err)
-		return model.StageStatus_STAGE_FAILURE
-	}
-
-	e.slp.Success("Successfully applied changes")
-	return model.StageStatus_STAGE_SUCCESS
-}
-
-func (e *deployExecutor) ensureDiff(ctx context.Context) model.StageStatus {
-	cmd, ok := e.initCDKCommand(ctx)
-	if !ok {
-		return model.StageStatus_STAGE_FAILURE
-	}
-
-	if err := cmd.Diff(ctx, e.slp); err != nil {
-		e.slp.Errorf("Failed to apply changes (%v)", err)
-		return model.StageStatus_STAGE_FAILURE
-	}
-
-	e.slp.Success("Successfully executed 'diff'")
-	return model.StageStatus_STAGE_SUCCESS
-}
-
-func (e *deployExecutor) ensureRollback(ctx context.Context, runningCommitHash string) model.StageStatus {
-	// There is nothing to do if this is the first deployment.
-	if runningCommitHash == "" {
-		e.slp.Errorf("Unable to determine the last deployed commit to rollback. It seems this is the first deployment.")
-		return model.StageStatus_STAGE_FAILURE
-	}
-
-	e.slp.Infof("Start rolling back to the state defined at commit %s", runningCommitHash)
-
-	cmd, ok := e.initCDKCommand(ctx)
-	if !ok {
-		return model.StageStatus_STAGE_FAILURE
-	}
-
-	if err := cmd.Deploy(ctx, e.slp); err != nil {
-		e.slp.Errorf("Failed to apply changes (%v)", err)
-		return model.StageStatus_STAGE_FAILURE
-	}
-
-	e.slp.Success("Successfully rolled back the changes")
-	return model.StageStatus_STAGE_SUCCESS
-}
-
-func showUsingVersion(ctx context.Context, cmd *cli.CDK, slp logpersister.StageLogPersister) (ok bool) {
-	version, err := cmd.Version(ctx)
-	if err != nil {
-		slp.Errorf("Failed to check cdk version (%v)", err)
-		return false
-	}
-	slp.Infof("Using cdk version %q to execute the cdk commands", version)
-	return true
+	lp.Successf("Successfully executed 'cdk deploy'")
+	return sdk.StageStatusSuccess
 }

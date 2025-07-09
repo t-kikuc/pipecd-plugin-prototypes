@@ -6,6 +6,10 @@ import (
 	"io"
 	"os/exec"
 	"strings"
+
+	sdktoolregistry "github.com/pipe-cd/piped-plugin-sdk-go/toolregistry"
+	"github.com/t-kikuc/pipecd-plugin-prototypes/cdk/config"
+	"github.com/t-kikuc/pipecd-plugin-prototypes/cdk/toolregistry"
 )
 
 type options struct {
@@ -14,39 +18,44 @@ type options struct {
 type Option func(*options)
 
 type CDK struct {
-	stacks   string
-	contexts string
-
-	region  string
-	profile string
-
 	execPath string
 	dir      string
+
+	dtCfg config.DeployTargetConfig
 
 	options options
 }
 
-func NewCDK(stacks, contexts []string, region, profile, execPath, dir string, opts ...Option) *CDK {
+func NewCDK(
+	ctx context.Context,
+	tr *sdktoolregistry.ToolRegistry,
+	appDir string,
+	dtCfg config.DeployTargetConfig,
+	opts ...Option,
+) (*CDK, error) {
+	cdktr := toolregistry.NewRegistry(tr)
+	cdkPath, err := cdktr.CDK(ctx, dtCfg.NodeVersion, dtCfg.CDKVersion)
+	if err != nil {
+		return nil, err
+	}
+
 	opt := options{}
 	for _, o := range opts {
 		o(&opt)
 	}
 
 	return &CDK{
-		stacks:   strings.Join(stacks, " "),
-		contexts: strings.Join(contexts, " --context "),
-		region:   region,
-		profile:  profile,
-		execPath: execPath,
-		dir:      dir,
+		execPath: cdkPath,
+		dir:      appDir,
+		dtCfg:    dtCfg,
 		options:  opt,
-	}
+	}, nil
 }
 
-func (e *CDK) Version(ctx context.Context) (string, error) {
+func (c *CDK) Version(ctx context.Context) (string, error) {
 	args := []string{"--version"}
-	cmd := exec.CommandContext(ctx, e.execPath, args...)
-	cmd.Dir = e.dir
+	cmd := exec.CommandContext(ctx, c.execPath, args...)
+	cmd.Dir = c.dir
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -56,23 +65,22 @@ func (e *CDK) Version(ctx context.Context) (string, error) {
 	return strings.TrimSpace(string(out)), nil
 }
 
-func (e *CDK) Deploy(ctx context.Context, w io.Writer) error {
-	if err := e.npmInstall(ctx, w); err != nil {
+func (c *CDK) Deploy(ctx context.Context, w io.Writer, input config.DeploymentInput) error {
+	if err := c.npmInstall(ctx, w); err != nil {
 		return err
 	}
 
 	args := []string{
 		"deploy",
-		e.stacks,
-		"--contexts", e.contexts,
+		stacksArgs(input),
+		contextsArgs(input),
 		"--require-approval", "never", // Skip approval for security-sensitive changes
 		// "--no-rollback",
-		"--region", e.region,
-		"--profile", e.profile,
+		"--profile", c.dtCfg.Profile,
 	}
 
-	cmd := exec.CommandContext(ctx, e.execPath, args...)
-	cmd.Dir = e.dir
+	cmd := exec.CommandContext(ctx, c.execPath, args...)
+	cmd.Dir = c.dir
 	cmd.Stdout = w
 	cmd.Stderr = w
 
@@ -80,21 +88,20 @@ func (e *CDK) Deploy(ctx context.Context, w io.Writer) error {
 	return cmd.Run()
 }
 
-func (e *CDK) Diff(ctx context.Context, w io.Writer) error {
-	if err := e.npmInstall(ctx, w); err != nil {
+func (c *CDK) Diff(ctx context.Context, w io.Writer, input config.DeploymentInput) error {
+	if err := c.npmInstall(ctx, w); err != nil {
 		return err
 	}
 
 	args := []string{
 		"diff",
-		e.stacks,
-		"--contexts", e.contexts,
-		"--region", e.region,
-		"--profile", e.profile,
+		stacksArgs(input),
+		contextsArgs(input),
+		"--profile", c.dtCfg.Profile,
 	}
 
-	cmd := exec.CommandContext(ctx, e.execPath, args...)
-	cmd.Dir = e.dir
+	cmd := exec.CommandContext(ctx, c.execPath, args...)
+	cmd.Dir = c.dir
 	cmd.Stdout = w
 	cmd.Stderr = w
 
@@ -103,12 +110,26 @@ func (e *CDK) Diff(ctx context.Context, w io.Writer) error {
 }
 
 // FIXME: Use npm installed by toolregistry
-func (e *CDK) npmInstall(ctx context.Context, w io.Writer) error {
+func (c *CDK) npmInstall(ctx context.Context, w io.Writer) error {
 	cmd := exec.CommandContext(ctx, "npm", "install")
-	cmd.Dir = e.dir
+	cmd.Dir = c.dir
 	cmd.Stdout = w
 	cmd.Stderr = w
 
 	fmt.Fprintf(w, "execute 'npm install'\n")
 	return cmd.Run()
+}
+
+func stacksArgs(input config.DeploymentInput) string {
+	if len(input.Stacks) == 0 {
+		return "--all"
+	}
+	return strings.Join(input.Stacks, " ")
+}
+
+func contextsArgs(input config.DeploymentInput) string {
+	if len(input.Contexts) == 0 {
+		return ""
+	}
+	return "--context " + strings.Join(input.Contexts, " --context ")
 }
