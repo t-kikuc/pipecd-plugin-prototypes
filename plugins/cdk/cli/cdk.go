@@ -66,10 +66,6 @@ func (c *CDK) Version(ctx context.Context) (string, error) {
 }
 
 func (c *CDK) Deploy(ctx context.Context, w io.Writer, input config.DeploymentInput) error {
-	if err := c.npmInstall(ctx, w); err != nil {
-		return err
-	}
-
 	args := []string{
 		"deploy",
 		stacksArgs(input),
@@ -79,25 +75,22 @@ func (c *CDK) Deploy(ctx context.Context, w io.Writer, input config.DeploymentIn
 		"--profile", c.dtCfg.Profile,
 	}
 
-	cmd := exec.CommandContext(ctx, c.execPath, args...)
-	cmd.Dir = c.dir
-	cmd.Stdout = w
-	cmd.Stderr = w
-
-	fmt.Fprintf(w, "execute 'cdk %s'", strings.Join(args, " "))
-	return cmd.Run()
+	return c.execute(ctx, w, args)
 }
 
 func (c *CDK) Diff(ctx context.Context, w io.Writer, input config.DeploymentInput) error {
-	if err := c.npmInstall(ctx, w); err != nil {
-		return err
-	}
-
 	args := []string{
 		"diff",
 		stacksArgs(input),
 		contextsArgs(input),
 		"--profile", c.dtCfg.Profile,
+	}
+	return c.execute(ctx, w, args)
+}
+
+func (c *CDK) execute(ctx context.Context, w io.Writer, args []string) error {
+	if err := c.npmInstall(ctx, w); err != nil {
+		return err
 	}
 
 	cmd := exec.CommandContext(ctx, c.execPath, args...)
