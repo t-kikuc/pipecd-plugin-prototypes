@@ -72,8 +72,8 @@ func (c *CDK) Deploy(ctx context.Context, w io.Writer, input config.DeploymentIn
 
 	args := []string{
 		"deploy",
-		input.StacksArgs(),
-		input.ContextsArgs(),
+		stacksArgs(input),
+		contextsArgs(input),
 		"--require-approval", "never", // Skip approval for security-sensitive changes
 		// "--no-rollback",
 		"--profile", c.dtCfg.Profile,
@@ -95,8 +95,8 @@ func (c *CDK) Diff(ctx context.Context, w io.Writer, input config.DeploymentInpu
 
 	args := []string{
 		"diff",
-		input.StacksArgs(),
-		input.ContextsArgs(),
+		stacksArgs(input),
+		contextsArgs(input),
 		"--profile", c.dtCfg.Profile,
 	}
 
@@ -118,4 +118,18 @@ func (c *CDK) npmInstall(ctx context.Context, w io.Writer) error {
 
 	fmt.Fprintf(w, "execute 'npm install'\n")
 	return cmd.Run()
+}
+
+func stacksArgs(input config.DeploymentInput) string {
+	if len(input.Stacks) == 0 {
+		return "--all"
+	}
+	return strings.Join(input.Stacks, " ")
+}
+
+func contextsArgs(input config.DeploymentInput) string {
+	if len(input.Contexts) == 0 {
+		return ""
+	}
+	return "--context " + strings.Join(input.Contexts, " --context ")
 }

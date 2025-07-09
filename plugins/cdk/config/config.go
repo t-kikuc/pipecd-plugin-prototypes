@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"strings"
 )
 
 // Config represents the plugin-scoped configuration.
@@ -62,20 +61,6 @@ type DeploymentInput struct {
 
 func (i *DeploymentInput) validate() error {
 	return nil
-}
-
-func (i *DeploymentInput) StacksArgs() string {
-	if len(i.Stacks) == 0 {
-		return "--all"
-	}
-	return strings.Join(i.Stacks, " ")
-}
-
-func (i *DeploymentInput) ContextsArgs() string {
-	if len(i.Contexts) == 0 {
-		return ""
-	}
-	return "--context " + strings.Join(i.Contexts, " --context ")
 }
 
 // DeployStageOptions contains all configurable values for a CDK_SYNC stage.
