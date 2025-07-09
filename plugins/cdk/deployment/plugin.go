@@ -77,7 +77,7 @@ func (p *Plugin) BuildQuickSyncStages(ctx context.Context, _ *sdk.ConfigNone, in
 	if input.Request.Rollback {
 		stages = append(stages, sdk.QuickSyncStage{
 			Name:               stageRollback,
-			Description:        "Rollback by 'cdk depoy' for the previous CDK files",
+			Description:        "Rollback by 'cdk deploy' for the previous CDK files",
 			Rollback:           true,
 			Metadata:           map[string]string{},
 			AvailableOperation: sdk.ManualOperationNone,
