@@ -47,25 +47,27 @@ func (p Plugin) GetLivestate(ctx context.Context, _ *sdk.ConfigNone, dts []*sdk.
 	}
 	// TODO: Check the drift between CFn stack and the actual resource??
 
-	return toResult(buf.Bytes(), dt.Name), nil
+	return toResult(buf.Bytes(), dt.Name, cfg.Spec.Input.Stacks), nil
 }
 
-func toResult(diffOutput []byte, dtName string) *sdk.GetLivestateResponse {
+func toResult(diffOutput []byte, dtName string, stacks []string) *sdk.GetLivestateResponse {
 	hasDiff := hasDiff(string(diffOutput))
+	now := time.Now()
 
-	// Consider the Stack as one resource since it's troublesome to fetch all resources for now.
+	lives := []sdk.ResourceState{}
+	for _, stack := range stacks {
+		lives = append(lives, sdk.ResourceState{
+			ID:           stack,
+			Name:         stack,
+			DeployTarget: dtName,
+			CreatedAt:    now,
+			HealthStatus: sdk.ResourceHealthStateHealthy, // TODO: Improve?
+		})
+	}
+
 	return &sdk.GetLivestateResponse{
 		LiveState: sdk.ApplicationLiveState{
-			// TODO: Create Resources for each stack.
-			Resources: []sdk.ResourceState{
-				{
-					ID:           "cdk-stack",
-					Name:         "CDK Stack",
-					DeployTarget: dtName,
-					CreatedAt:    time.Now(),
-					HealthStatus: sdk.ResourceHealthStateHealthy, // TODO: Improve?
-				},
-			},
+			Resources: lives,
 		},
 		SyncState: sdk.ApplicationSyncState{
 			Status:      getSyncStatus(hasDiff),
