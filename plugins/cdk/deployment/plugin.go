@@ -96,7 +96,8 @@ func (p *Plugin) DetermineStrategy(ctx context.Context, _ *sdk.ConfigNone, input
 
 // DetermineVersions implements sdk.DeploymentPlugin.
 func (p *Plugin) DetermineVersions(ctx context.Context, _ *sdk.ConfigNone, input *sdk.DetermineVersionsInput[config.ApplicationSpec]) (*sdk.DetermineVersionsResponse, error) {
-	panic("unimplemented")
+	// TODO: implement
+	return &sdk.DetermineVersionsResponse{}, nil
 }
 
 // ExecuteStage executes a stage.
