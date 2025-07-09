@@ -11,7 +11,7 @@ import (
 type DeployTargetConfig struct {
 	// CDKVersion is the version of cdk to use. e.g. "2.1001.0"
 	// This field is required.
-	CDKVersion string `json:"version"`
+	CDKVersion string `json:"cdkVersion"`
 	// NodeVersion is the version of node to use. e.g. "v22.14.0"
 	// This field is required.
 	NodeVersion string `json:"nodeVersion"`
@@ -24,7 +24,7 @@ type DeployTargetConfig struct {
 
 func (c *DeployTargetConfig) Validate() error {
 	if c.CDKVersion == "" {
-		return fmt.Errorf("version is required")
+		return fmt.Errorf("cdkVersion is required")
 	}
 	if c.NodeVersion == "" {
 		return fmt.Errorf("nodeVersion is required")
