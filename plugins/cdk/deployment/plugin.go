@@ -2,6 +2,7 @@ package deployment
 
 import (
 	"context"
+	"fmt"
 	"slices"
 
 	sdk "github.com/pipe-cd/piped-plugin-sdk-go"
@@ -22,7 +23,7 @@ const (
 // Plugin implements sdk.DeploymentPlugin for Terraform.
 type Plugin struct{}
 
-var _ sdk.DeploymentPlugin[sdk.ConfigNone, config.CDKDeployTargetConfig, config.CDKApplicationSpec] = (*Plugin)(nil)
+var _ sdk.DeploymentPlugin[sdk.ConfigNone, config.DeployTargetConfig, config.ApplicationSpec] = (*Plugin)(nil)
 
 // FetchDefinedStages implements sdk.DeploymentPlugin.
 func (p *Plugin) FetchDefinedStages() []string {
@@ -89,17 +90,29 @@ func (p *Plugin) BuildQuickSyncStages(ctx context.Context, _ *sdk.ConfigNone, in
 
 // DetermineStrategy implements sdk.DeploymentPlugin.
 // It returns (nil, nil) because this plugin does not have specific logic for DetermineStrategy.
-func (p *Plugin) DetermineStrategy(ctx context.Context, _ *sdk.ConfigNone, input *sdk.DetermineStrategyInput[config.CDKApplicationSpec]) (*sdk.DetermineStrategyResponse, error) {
+func (p *Plugin) DetermineStrategy(ctx context.Context, _ *sdk.ConfigNone, input *sdk.DetermineStrategyInput[config.ApplicationSpec]) (*sdk.DetermineStrategyResponse, error) {
 	return nil, nil
 }
 
 // DetermineVersions implements sdk.DeploymentPlugin.
-func (p *Plugin) DetermineVersions(ctx context.Context, _ *sdk.ConfigNone, input *sdk.DetermineVersionsInput[config.CDKApplicationSpec]) (*sdk.DetermineVersionsResponse, error) {
+func (p *Plugin) DetermineVersions(ctx context.Context, _ *sdk.ConfigNone, input *sdk.DetermineVersionsInput[config.ApplicationSpec]) (*sdk.DetermineVersionsResponse, error) {
 	panic("unimplemented")
 }
 
 // ExecuteStage executes a stage.
-func (p *Plugin) ExecuteStage(ctx context.Context, _ *sdk.ConfigNone, dts []*sdk.DeployTarget[config.CDKDeployTargetConfig], req *sdk.ExecuteStageInput[config.CDKApplicationSpec]) (*sdk.ExecuteStageResponse, error) {
-	// TODO: Migrate to the SDK version
-	panic("unimplemented")
+func (p *Plugin) ExecuteStage(ctx context.Context, _ *sdk.ConfigNone, dts []*sdk.DeployTarget[config.DeployTargetConfig], input *sdk.ExecuteStageInput[config.ApplicationSpec]) (*sdk.ExecuteStageResponse, error) {
+	switch input.Request.StageName {
+	case stageDeploy:
+		return &sdk.ExecuteStageResponse{
+			Status: executeDeploy(ctx, dts[0], input),
+		}, nil
+	case stageDiff:
+		panic("unimplemented")
+		// return executeDiff(ctx, dts[0], input)
+	case stageRollback:
+		panic("unimplemented")
+		// return executeRollback(ctx, dts[0], input)
+	default:
+		return nil, fmt.Errorf("unknown stage: %s", input.Request.StageName)
+	}
 }
