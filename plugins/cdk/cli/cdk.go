@@ -22,8 +22,6 @@ type CDK struct {
 	dir      string
 
 	dtCfg config.DeployTargetConfig
-
-	options options
 }
 
 func NewCDK(
@@ -31,7 +29,6 @@ func NewCDK(
 	tr *sdktoolregistry.ToolRegistry,
 	appDir string,
 	dtCfg config.DeployTargetConfig,
-	opts ...Option,
 ) (*CDK, error) {
 	cdktr := toolregistry.NewRegistry(tr)
 	cdkPath, err := cdktr.CDK(ctx, dtCfg.NodeVersion, dtCfg.CDKVersion)
@@ -39,16 +36,10 @@ func NewCDK(
 		return nil, err
 	}
 
-	opt := options{}
-	for _, o := range opts {
-		o(&opt)
-	}
-
 	return &CDK{
 		execPath: cdkPath,
 		dir:      appDir,
 		dtCfg:    dtCfg,
-		options:  opt,
 	}, nil
 }
 
@@ -78,12 +69,13 @@ func (c *CDK) Deploy(ctx context.Context, w io.Writer, input config.DeploymentIn
 	return c.execute(ctx, w, args)
 }
 
-func (c *CDK) Diff(ctx context.Context, w io.Writer, input config.DeploymentInput) error {
+func (c *CDK) Diff(ctx context.Context, w io.Writer, input config.DeploymentInput, opts ...string) error {
 	args := []string{
 		"diff",
 		stacksArgs(input),
 		contextsArgs(input),
 		"--profile", c.dtCfg.Profile,
+		strings.Join(opts, " "),
 	}
 	return c.execute(ctx, w, args)
 }
