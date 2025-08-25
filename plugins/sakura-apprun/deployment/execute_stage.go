@@ -7,55 +7,44 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	config "github.com/pipe-cd/pipecd/pkg/configv1"
-	"github.com/pipe-cd/pipecd/pkg/model"
-	"github.com/pipe-cd/pipecd/pkg/plugin/api/v1alpha1/deployment"
-	"github.com/pipe-cd/pipecd/pkg/plugin/logpersister"
+	sdk "github.com/pipe-cd/piped-plugin-sdk-go"
 	apprun "github.com/sacloud/apprun-api-go"
 	v1 "github.com/sacloud/apprun-api-go/apis/v1"
 
-	apprunconfig "github.com/t-kikuc/pipecd-plugin-prototypes/sakura-apprun/config"
+	"github.com/t-kikuc/pipecd-plugin-prototypes/sakura-apprun/config"
 )
 
 type deployExecutor struct {
 	appDir string
-	input  apprunconfig.AppRunDeploymentInput
-	slp    logpersister.StageLogPersister
+	input  config.AppRunDeploymentInput
+	slp    sdk.StageLogPersister
 }
 
-func (s *DeploymentServiceServer) executeStage(ctx context.Context, slp logpersister.StageLogPersister, input *deployment.ExecutePluginInput) (model.StageStatus, error) {
-	cfg, err := config.DecodeYAML[*apprunconfig.AppRunApplicationSpec](input.GetTargetDeploymentSource().GetApplicationConfig())
-	if err != nil {
-		slp.Errorf("Failed while decoding application config (%v)", err)
-		return model.StageStatus_STAGE_FAILURE, err
-	}
-
+func executeStage(ctx context.Context, dtCfgs []*sdk.DeployTarget[config.AppRunDeployTargetConfig], input *sdk.ExecuteStageInput[config.AppRunDeploymentInput]) (sdk.StageStatus, error) {
 	e := &deployExecutor{
-		input:  cfg.Spec.Input,
-		slp:    slp,
-		appDir: string(input.GetTargetDeploymentSource().GetApplicationDirectory()),
+		input:  *input.Request.TargetDeploymentSource.ApplicationConfig.Spec,
+		slp:    input.Client.LogPersister(),
+		appDir: string(input.Request.TargetDeploymentSource.ApplicationDirectory),
 	}
 
-	slp.Infof("[DEBUG] ### pipedv1 executeStage() > %s ###", input.GetStage().GetName())
-
-	switch input.GetStage().GetName() {
-	case stageDeploy.String():
+	switch input.Request.StageName {
+	case stageDeploy:
 		return e.ensureSync(ctx), nil
-	case stageRollback.String():
-		e.appDir = string(input.GetRunningDeploymentSource().GetApplicationDirectory())
-		return e.ensureRollback(ctx, input.GetDeployment().GetRunningCommitHash()), nil
+	case stageRollback:
+		e.appDir = input.Request.RunningDeploymentSource.ApplicationDirectory
+		return e.ensureRollback(ctx, input.Request.RunningDeploymentSource.CommitHash), nil
 	default:
-		return model.StageStatus_STAGE_FAILURE, status.Error(codes.InvalidArgument, "unsupported stage")
+		return sdk.StageStatusFailure, status.Error(codes.InvalidArgument, "unsupported stage")
 	}
 }
 
-func (e *deployExecutor) ensureSync(ctx context.Context) model.StageStatus {
+func (e *deployExecutor) ensureSync(ctx context.Context) sdk.StageStatus {
 	cli := &apprun.Client{} // Uses env vars by deafult (SAKURACLOUD_ACCESS_TOKEN, SAKURACLOUD_ACCESS_TOKEN_SECRET)
 
 	manifest, err := loadManifest(fmt.Sprintf("%s/%s", e.appDir, e.input.ConfigFile))
 	if err != nil {
 		e.slp.Errorf("Failed to load manifest (%v)", err)
-		return model.StageStatus_STAGE_FAILURE
+		return sdk.StageStatusFailure
 	}
 
 	op := apprun.NewApplicationOp(cli)
@@ -63,30 +52,30 @@ func (e *deployExecutor) ensureSync(ctx context.Context) model.StageStatus {
 	exists, id, err := existsApplication(ctx, op, *manifest.patchBody.Name)
 	if err != nil {
 		e.slp.Errorf("Failed to check if application exists (%v)", err)
-		return model.StageStatus_STAGE_FAILURE
+		return sdk.StageStatusFailure
 	}
 
 	if exists {
 		e.slp.Infof("Start updating the existing application. id: %s", id)
 		if _, err := op.Update(ctx, id, manifest.patchBody); err != nil {
 			e.slp.Errorf("Failed to update application (%v)", err)
-			return model.StageStatus_STAGE_FAILURE
+			return sdk.StageStatusFailure
 		}
 		e.slp.Success("Successfully updated the existing application")
-		return model.StageStatus_STAGE_SUCCESS
+		return sdk.StageStatusSuccess
 	} else {
 		e.slp.Infof("Start creating a new application. name: %s", *manifest.patchBody.Name)
 		resp, err := op.Create(ctx, manifest.toCreateBody())
 		if err != nil {
 			e.slp.Errorf("Failed to create application (%v)", err)
-			return model.StageStatus_STAGE_FAILURE
+			return sdk.StageStatusFailure
 		}
 		e.slp.Successf("Successfully created a new application. id: %s", resp.Id)
-		return model.StageStatus_STAGE_SUCCESS
+		return sdk.StageStatusSuccess
 	}
 }
 
-func (e *deployExecutor) ensureRollback(ctx context.Context, runningCommitHash string) model.StageStatus {
+func (e *deployExecutor) ensureRollback(ctx context.Context, runningCommitHash string) sdk.StageStatus {
 	panic("rollbakc is not implemented yet")
 }
 
