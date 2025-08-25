@@ -6,20 +6,17 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pipe-cd/pipecd/pkg/plugin/toolregistry/toolregistrytest"
-	"github.com/stretchr/testify/assert"
+	"github.com/pipe-cd/piped-plugin-sdk-go/toolregistry/toolregistrytest"
 	"github.com/stretchr/testify/require"
+	"gotest.tools/assert"
 )
 
 func TestRegistry_Ecschedule(t *testing.T) {
 	t.Parallel()
 
-	c, err := toolregistrytest.NewToolRegistry(t)
-	require.NoError(t, err)
+	c := toolregistrytest.NewTestToolRegistry(t)
 
 	r := NewRegistry(c)
-
-	t.Cleanup(func() { c.Close() })
 
 	p, err := r.Ecschedule(context.Background(), "v0.12.0")
 	require.NoError(t, err)

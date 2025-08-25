@@ -2,23 +2,51 @@ package deployment
 
 import (
 	"context"
+	"fmt"
 
+	sdk "github.com/pipe-cd/piped-plugin-sdk-go"
+	"github.com/t-kikuc/pipecd-plugin-prototypes/ecschedule/cli"
+	"github.com/t-kikuc/pipecd-plugin-prototypes/ecschedule/config"
+	"github.com/t-kikuc/pipecd-plugin-prototypes/ecschedule/toolregistry"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	config "github.com/pipe-cd/pipecd/pkg/configv1"
-	"github.com/pipe-cd/pipecd/pkg/model"
-	"github.com/pipe-cd/pipecd/pkg/plugin/api/v1alpha1/deployment"
-	"github.com/pipe-cd/pipecd/pkg/plugin/logpersister"
-	"github.com/t-kikuc/pipecd-plugin-prototypes/ecschedule/cli"
-	ecspconfig "github.com/t-kikuc/pipecd-plugin-prototypes/ecschedule/config"
 )
 
 type deployExecutor struct {
 	appDir         string
 	ecschedulePath string
-	input          ecspconfig.EcscheduleDeploymentInput
-	slp            logpersister.StageLogPersister
+	input          config.EcscheduleDeploymentInput
+	lp             sdk.StageLogPersister
+}
+
+func executeStage(ctx context.Context, dtCfgs []*sdk.DeployTarget[config.EcscheduleDeployTargetConfig], input *sdk.ExecuteStageInput[config.EcscheduleDeploymentInput]) (sdk.StageStatus, error) {
+	if len(dtCfgs) != 1 {
+		return sdk.StageStatusFailure, status.Error(codes.InvalidArgument, "the number of deploy target must be one for this plugin.")
+	}
+	e := &deployExecutor{
+		input:  *input.Request.TargetDeploymentSource.ApplicationConfig.Spec,
+		lp:     input.Client.LogPersister(),
+		appDir: input.Request.TargetDeploymentSource.ApplicationDirectory,
+	}
+	toolRegistry := toolregistry.NewRegistry(input.Client.ToolRegistry())
+	p, err := toolRegistry.Ecschedule(ctx, dtCfgs[0].Config.Version)
+	if err != nil {
+		return sdk.StageStatusFailure, err
+	}
+	e.ecschedulePath = p
+
+	switch input.Request.StageName {
+	case stageApply:
+		// return e.ensureSync(ctx), nil
+		return e.ensureApply(ctx), nil
+	case stageDiff:
+		return e.ensureDiff(ctx), nil
+	case stageRollback:
+		e.appDir = input.Request.RunningDeploymentSource.ApplicationDirectory
+		return e.ensureRollback(ctx, input.Request.RunningDeploymentSource.CommitHash), nil
+	default:
+		return sdk.StageStatusFailure, status.Error(codes.InvalidArgument, "unsupported stage")
+	}
 }
 
 func (e *deployExecutor) initEcscheduleCommand(ctx context.Context) (cmd *cli.Ecschedule, ok bool) {
@@ -28,105 +56,72 @@ func (e *deployExecutor) initEcscheduleCommand(ctx context.Context) (cmd *cli.Ec
 		e.input.Config,
 	)
 
-	if ok := showUsingVersion(ctx, cmd, e.slp); !ok {
+	if ok := showUsingVersion(ctx, cmd, e.lp); !ok {
 		return nil, false
 	}
 
 	return cmd, true
 }
 
-func (s *DeploymentServiceServer) executeStage(ctx context.Context, slp logpersister.StageLogPersister, input *deployment.ExecutePluginInput) (model.StageStatus, error) {
-	cfg, err := config.DecodeYAML[*ecspconfig.EcscheduleApplicationSpec](input.GetTargetDeploymentSource().GetApplicationConfig())
-	if err != nil {
-		slp.Errorf("Failed while decoding application config (%v)", err)
-		return model.StageStatus_STAGE_FAILURE, err
-	}
-
-	e := &deployExecutor{
-		input:  cfg.Spec.Input,
-		slp:    slp,
-		appDir: string(input.GetTargetDeploymentSource().GetApplicationDirectory()),
-	}
-	e.ecschedulePath, err = s.toolRegistry.Ecschedule(ctx, s.deployTargetConfig.Version)
-	if err != nil {
-		return model.StageStatus_STAGE_FAILURE, err
-	}
-
-	slp.Infof("[DEBUG] ### pipedv1 executeStage() ###")
-
-	switch input.GetStage().GetName() {
-	case stageApply.String():
-		// return e.ensureSync(ctx), nil
-		return e.ensureApply(ctx), nil
-	case stageDiff.String():
-		return e.ensureDiff(ctx), nil
-	case stageRollback.String():
-		e.appDir = string(input.GetRunningDeploymentSource().GetApplicationDirectory())
-		return e.ensureRollback(ctx, input.GetDeployment().GetRunningCommitHash()), nil
-	default:
-		return model.StageStatus_STAGE_FAILURE, status.Error(codes.InvalidArgument, "unsupported stage")
-	}
-}
-
-func (e *deployExecutor) ensureApply(ctx context.Context) model.StageStatus {
+func (e *deployExecutor) ensureApply(ctx context.Context) sdk.StageStatus {
 	cmd, ok := e.initEcscheduleCommand(ctx)
 	if !ok {
-		return model.StageStatus_STAGE_FAILURE
+		return sdk.StageStatusFailure
 	}
 
-	if err := cmd.Apply(ctx, e.slp); err != nil {
-		e.slp.Errorf("Failed to apply changes (%v)", err)
-		return model.StageStatus_STAGE_FAILURE
+	if err := cmd.Apply(ctx, e.lp); err != nil {
+		e.lp.Error(fmt.Sprintf("Failed to apply changes (%v)", err))
+		return sdk.StageStatusFailure
 	}
 
-	e.slp.Success("Successfully applied changes")
-	return model.StageStatus_STAGE_SUCCESS
+	e.lp.Success("Successfully applied changes")
+	return sdk.StageStatusSuccess
 }
 
-func (e *deployExecutor) ensureDiff(ctx context.Context) model.StageStatus {
+func (e *deployExecutor) ensureDiff(ctx context.Context) sdk.StageStatus {
 	cmd, ok := e.initEcscheduleCommand(ctx)
 	if !ok {
-		return model.StageStatus_STAGE_FAILURE
+		return sdk.StageStatusFailure
 	}
 
-	if err := cmd.Diff(ctx, e.slp); err != nil {
-		e.slp.Errorf("Failed to apply changes (%v)", err)
-		return model.StageStatus_STAGE_FAILURE
+	if err := cmd.Diff(ctx, e.lp); err != nil {
+		e.lp.Error(fmt.Sprintf("Failed to apply changes (%v)", err))
+		return sdk.StageStatusFailure
 	}
 
-	e.slp.Success("Successfully executed 'diff'")
-	return model.StageStatus_STAGE_SUCCESS
+	e.lp.Success("Successfully executed 'diff'")
+	return sdk.StageStatusSuccess
 }
 
-func (e *deployExecutor) ensureRollback(ctx context.Context, runningCommitHash string) model.StageStatus {
+func (e *deployExecutor) ensureRollback(ctx context.Context, runningCommitHash string) sdk.StageStatus {
 	// There is nothing to do if this is the first deployment.
 	if runningCommitHash == "" {
-		e.slp.Errorf("Unable to determine the last deployed commit to rollback. It seems this is the first deployment.")
-		return model.StageStatus_STAGE_FAILURE
+		e.lp.Error("Unable to determine the last deployed commit to rollback. It seems this is the first deployment.")
+		return sdk.StageStatusFailure
 	}
 
-	e.slp.Infof("Start rolling back to the state defined at commit %s", runningCommitHash)
+	e.lp.Info(fmt.Sprintf("Start rolling back to the state defined at commit %s", runningCommitHash))
 
 	cmd, ok := e.initEcscheduleCommand(ctx)
 	if !ok {
-		return model.StageStatus_STAGE_FAILURE
+		return sdk.StageStatusFailure
 	}
 
-	if err := cmd.Apply(ctx, e.slp); err != nil {
-		e.slp.Errorf("Failed to apply changes (%v)", err)
-		return model.StageStatus_STAGE_FAILURE
+	if err := cmd.Apply(ctx, e.lp); err != nil {
+		e.lp.Error(fmt.Sprintf("Failed to apply changes (%v)", err))
+		return sdk.StageStatusFailure
 	}
 
-	e.slp.Success("Successfully rolled back the changes")
-	return model.StageStatus_STAGE_SUCCESS
+	e.lp.Success("Successfully rolled back the changes")
+	return sdk.StageStatusSuccess
 }
 
-func showUsingVersion(ctx context.Context, cmd *cli.Ecschedule, slp logpersister.StageLogPersister) (ok bool) {
+func showUsingVersion(ctx context.Context, cmd *cli.Ecschedule, lp sdk.StageLogPersister) (ok bool) {
 	version, err := cmd.Version(ctx)
 	if err != nil {
-		slp.Errorf("Failed to check ecschedule version (%v)", err)
+		lp.Error(fmt.Sprintf("Failed to check ecschedule version (%v)", err))
 		return false
 	}
-	slp.Infof("Using ecschedule version %q to execute ecschedule commands", version)
+	lp.Info(fmt.Sprintf("Using ecschedule version %q to execute ecschedule commands", version))
 	return true
 }

@@ -1,23 +1,5 @@
 package config
 
-import (
-	config "github.com/pipe-cd/pipecd/pkg/configv1"
-)
-
-// EcscheduleApplicationSpec represents an application configuration for Ecschedule application.
-type EcscheduleApplicationSpec struct {
-	config.GenericApplicationSpec
-	// Input for ecschedule deployment. e.g. ecschedule version
-	Input EcscheduleDeploymentInput `json:"input"`
-	// Configuration for quick sync.
-	QuickSync EcscheduleApplyStageOptions `json:"quickSync"`
-}
-
-func (s *EcscheduleApplicationSpec) Validate() error {
-	// TODO: Validate EcscheduleApplicationSpec fields.
-	return nil
-}
-
 type EcscheduleDeploymentInput struct {
 	// Config is the path to the ecschedule config file. This will be used as `ecschedule deploy --config <Config>`
 	Config string `json:"config"`
