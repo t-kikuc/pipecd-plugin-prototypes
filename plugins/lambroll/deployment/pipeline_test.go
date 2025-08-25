@@ -2,68 +2,43 @@ package deployment
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/pipe-cd/pipecd/pkg/model"
-	"github.com/pipe-cd/pipecd/pkg/plugin/api/v1alpha1/deployment"
+	sdk "github.com/pipe-cd/piped-plugin-sdk-go"
 )
 
 func TestBuildQuickSyncStages(t *testing.T) {
 	t.Parallel()
 
-	now := time.Now()
-
 	tests := []struct {
 		name         string
 		autoRollback bool
-		expected     []*model.PipelineStage
+		expected     []sdk.PipelineStage
 	}{
 		{
 			name:         "without auto rollback",
 			autoRollback: false,
-			expected: []*model.PipelineStage{
+			expected: []sdk.PipelineStage{
 				{
-					Id:        "LambrollDeploy",
-					Name:      "LAMBROLL_DEPLOY",
-					Desc:      "Sync by executing 'lambroll deploy'",
-					Index:     0,
-					Rollback:  false,
-					Status:    model.StageStatus_STAGE_NOT_STARTED_YET,
-					Metadata:  nil,
-					CreatedAt: now.Unix(),
-					UpdatedAt: now.Unix(),
-
-					Visible: true, // TODO: This is for debug with v0 UI
+					Name:     "LAMBROLL_DEPLOY",
+					Index:    0,
+					Rollback: false,
 				},
 			},
 		},
 		{
 			name:         "with auto rollback",
 			autoRollback: true,
-			expected: []*model.PipelineStage{
+			expected: []sdk.PipelineStage{
 				{
-					Id:        "LambrollDeploy",
-					Name:      "LAMBROLL_DEPLOY",
-					Desc:      "Sync by executing 'lambroll deploy'",
-					Index:     0,
-					Rollback:  false,
-					Status:    model.StageStatus_STAGE_NOT_STARTED_YET,
-					Metadata:  nil,
-					CreatedAt: now.Unix(),
-					UpdatedAt: now.Unix(),
-
-					Visible: true, // TODO: This is for debug with v0 UI
+					Name:     "LAMBROLL_DEPLOY",
+					Index:    0,
+					Rollback: false,
 				},
 				{
-					Id:        "LambrollRollback",
-					Name:      "LAMBROLL_ROLLBACK",
-					Desc:      "Rollback the deployment",
-					Rollback:  true,
-					Status:    model.StageStatus_STAGE_NOT_STARTED_YET,
-					CreatedAt: now.Unix(),
-					UpdatedAt: now.Unix(),
+					Name:     "LAMBROLL_ROLLBACK",
+					Rollback: true,
 				},
 			},
 		},
@@ -72,7 +47,7 @@ func TestBuildQuickSyncStages(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			actual := buildQuickSyncStages(tt.autoRollback, now)
+			actual := buildQuickSyncStages(tt.autoRollback)
 			assert.Equal(t, tt.expected, actual)
 		})
 	}
@@ -81,109 +56,66 @@ func TestBuildQuickSyncStages(t *testing.T) {
 func TestBuildPipelineStages(t *testing.T) {
 	t.Parallel()
 
-	now := time.Now()
-
 	tests := []struct {
 		name         string
-		stages       []*deployment.BuildPipelineSyncStagesRequest_StageConfig
+		stages       []sdk.StageConfig
 		autoRollback bool
-		expected     []*model.PipelineStage
+		expected     []sdk.PipelineStage
 	}{
 		{
 			name: "without auto rollback",
-			stages: []*deployment.BuildPipelineSyncStagesRequest_StageConfig{
+			stages: []sdk.StageConfig{
 				{
-					Id:    "stage-1",
 					Name:  "Stage 1",
-					Desc:  "Description 1",
 					Index: 0,
 				},
 				{
-					Id:    "stage-2",
 					Name:  "Stage 2",
-					Desc:  "Description 2",
 					Index: 1,
 				},
 			},
 			autoRollback: false,
-			expected: []*model.PipelineStage{
+			expected: []sdk.PipelineStage{
 				{
-					Id:        "stage-1",
-					Name:      "Stage 1",
-					Desc:      "Description 1",
-					Index:     0,
-					Rollback:  false,
-					Status:    model.StageStatus_STAGE_NOT_STARTED_YET,
-					CreatedAt: now.Unix(),
-					UpdatedAt: now.Unix(),
-
-					Visible: true, // TODO: This is for debug with v0 UI
+					Name:     "Stage 1",
+					Index:    0,
+					Rollback: false,
 				},
 				{
-					Id:        "stage-2",
-					Name:      "Stage 2",
-					Desc:      "Description 2",
-					Index:     1,
-					Rollback:  false,
-					Status:    model.StageStatus_STAGE_NOT_STARTED_YET,
-					CreatedAt: now.Unix(),
-					UpdatedAt: now.Unix(),
-
-					Visible: true, // TODO: This is for debug with v0 UI
+					Name:     "Stage 2",
+					Index:    1,
+					Rollback: false,
 				},
 			},
 		},
 		{
 			name: "with auto rollback",
-			stages: []*deployment.BuildPipelineSyncStagesRequest_StageConfig{
+			stages: []sdk.StageConfig{
 				{
-					Id:    "stage-1",
 					Name:  "Stage 1",
-					Desc:  "Description 1",
 					Index: 0,
 				},
 				{
-					Id:    "stage-2",
 					Name:  "Stage 2",
-					Desc:  "Description 2",
 					Index: 1,
 				},
 			},
 			autoRollback: true,
-			expected: []*model.PipelineStage{
+			expected: []sdk.PipelineStage{
 				{
-					Id:        "stage-1",
-					Name:      "Stage 1",
-					Desc:      "Description 1",
-					Index:     0,
-					Rollback:  false,
-					Status:    model.StageStatus_STAGE_NOT_STARTED_YET,
-					CreatedAt: now.Unix(),
-					UpdatedAt: now.Unix(),
-
-					Visible: true, // TODO: This is for debug with v0 UI
+					Name:     "Stage 1",
+					Index:    0,
+					Rollback: false,
 				},
 				{
-					Id:        "stage-2",
-					Name:      "Stage 2",
-					Desc:      "Description 2",
-					Index:     1,
-					Rollback:  false,
-					Status:    model.StageStatus_STAGE_NOT_STARTED_YET,
-					CreatedAt: now.Unix(),
-					UpdatedAt: now.Unix(),
-
-					Visible: true, // TODO: This is for debug with v0 UI
+					Name:     "Stage 2",
+					Index:    1,
+					Rollback: false,
 				},
 				{
-					Id:        "LambrollRollback",
-					Name:      "LAMBROLL_ROLLBACK",
-					Desc:      "Rollback the deployment",
-					Index:     0,
-					Rollback:  true,
-					Status:    model.StageStatus_STAGE_NOT_STARTED_YET,
-					CreatedAt: now.Unix(),
-					UpdatedAt: now.Unix(),
+					Name:     "LAMBROLL_ROLLBACK",
+					Index:    0,
+					Rollback: true,
 				},
 			},
 		},
@@ -192,7 +124,7 @@ func TestBuildPipelineStages(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			actual := buildPipelineStages(tt.stages, tt.autoRollback, now)
+			actual := buildPipelineStages(tt.stages, tt.autoRollback)
 			assert.Equal(t, tt.expected, actual)
 		})
 	}

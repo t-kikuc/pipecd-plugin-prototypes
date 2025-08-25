@@ -2,147 +2,62 @@ package deployment
 
 import (
 	"context"
-	"time"
 
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
-	config "github.com/pipe-cd/pipecd/pkg/configv1"
-	"github.com/pipe-cd/pipecd/pkg/plugin/api/v1alpha1/deployment"
-	"github.com/pipe-cd/pipecd/pkg/plugin/logpersister"
-	"github.com/pipe-cd/pipecd/pkg/plugin/signalhandler"
-	ecspconfig "github.com/t-kikuc/pipecd-plugin-prototypes/lambroll/config"
-	"github.com/t-kikuc/pipecd-plugin-prototypes/lambroll/toolregistry"
+	sdk "github.com/pipe-cd/piped-plugin-sdk-go"
+	config "github.com/t-kikuc/pipecd-plugin-prototypes/lambroll/config"
 )
 
-type toolClient interface {
-	InstallTool(ctx context.Context, name, version, script string) (path string, err error)
+type Plugin struct{}
+
+var _ sdk.DeploymentPlugin[sdk.ConfigNone, config.LambrollDeployTargetConfig, config.LambrollDeploymentInput] = &Plugin{}
+
+// DetermineStrategy implements sdk.DeploymentServiceServer.
+func (p *Plugin) DetermineStrategy(ctx context.Context, _ *sdk.ConfigNone, input *sdk.DetermineStrategyInput[config.LambrollDeploymentInput]) (*sdk.DetermineStrategyResponse, error) {
+	return nil, nil
 }
 
-type toolRegistry interface {
-	Lambroll(ctx context.Context, version string) (path string, err error)
-}
-
-type logPersister interface {
-	StageLogPersister(deploymentID, stageID string) logpersister.StageLogPersister
-}
-
-type DeploymentServiceServer struct {
-	deployment.UnimplementedDeploymentServiceServer
-
-	// this field is set with the plugin configuration
-	// the plugin configuration is sent from piped while initializing the plugin
-	pluginConfig *config.PipedPlugin
-	// deployTargetConfig might be empty. e.g. when it's not specified in the piped config.
-	// For now, this plugin supports up to one deploy target.
-	deployTargetConfig ecspconfig.LambrollDeployTargetConfig
-
-	logger       *zap.Logger
-	toolRegistry toolRegistry
-	logPersister logPersister
-}
-
-// NewDeploymentServiceServer creates a new DeploymentServiceServer of lambroll plugin.
-func NewDeploymentServiceServer(
-	config *config.PipedPlugin,
-	logger *zap.Logger,
-	toolClient toolClient,
-	logPersister logPersister,
-) (*DeploymentServiceServer, error) {
-	toolRegistry := toolregistry.NewRegistry(toolClient)
-
-	deployTargetConfig := ecspconfig.LambrollDeployTargetConfig{}
-	if len(config.DeployTargets) > 0 {
-		var err error
-		if deployTargetConfig, err = ecspconfig.ParseDeployTargetConfig(config.DeployTargets[0]); err != nil {
-			return nil, err
-		}
-	}
-
-	return &DeploymentServiceServer{
-		pluginConfig:       config,
-		deployTargetConfig: deployTargetConfig,
-		logger:             logger.Named("lambroll-plugin"),
-		toolRegistry:       toolRegistry,
-		logPersister:       logPersister,
-	}, nil
-}
-
-// Register registers all handling of this service into the specified gRPC server.
-func (s *DeploymentServiceServer) Register(server *grpc.Server) {
-	deployment.RegisterDeploymentServiceServer(server, s)
-}
-
-// DetermineStrategy implements deployment.DeploymentServiceServer.
-func (s *DeploymentServiceServer) DetermineStrategy(ctx context.Context, request *deployment.DetermineStrategyRequest) (*deployment.DetermineStrategyResponse, error) {
-	cfg, err := config.DecodeYAML[*ecspconfig.LambrollApplicationSpec](request.GetInput().GetTargetDeploymentSource().GetApplicationConfig())
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
-
-	strategy, summary, err := determineStrategy(*cfg.Spec)
-	if err != nil {
-		return nil, err
-	}
-	return &deployment.DetermineStrategyResponse{
-		SyncStrategy: strategy,
-		Summary:      summary,
-	}, nil
-}
-
-// DetermineVersions implements deployment.DeploymentServiceServer.
-func (s *DeploymentServiceServer) DetermineVersions(ctx context.Context, request *deployment.DetermineVersionsRequest) (*deployment.DetermineVersionsResponse, error) {
-	return &deployment.DetermineVersionsResponse{
+// DetermineVersions implements sdk.DeploymentServiceServer.
+func (p *Plugin) DetermineVersions(ctx context.Context, _ *sdk.ConfigNone, input *sdk.DetermineVersionsInput[config.LambrollDeploymentInput]) (*sdk.DetermineVersionsResponse, error) {
+	return &sdk.DetermineVersionsResponse{
+		// TODO: implement
 		Versions: nil,
 	}, nil
 }
 
-// BuildPipelineSyncStages implements deployment.DeploymentServiceServer.
-func (s *DeploymentServiceServer) BuildPipelineSyncStages(ctx context.Context, request *deployment.BuildPipelineSyncStagesRequest) (*deployment.BuildPipelineSyncStagesResponse, error) {
-	now := time.Now()
-	stages := buildPipelineStages(request.GetStages(), request.GetRollback(), now)
-	return &deployment.BuildPipelineSyncStagesResponse{
+// BuildPipelineSyncStages implements sdk.DeploymentServiceServer.
+func (p *Plugin) BuildPipelineSyncStages(ctx context.Context, _ *sdk.ConfigNone, input *sdk.BuildPipelineSyncStagesInput) (*sdk.BuildPipelineSyncStagesResponse, error) {
+	stages := buildPipelineStages(input.Request.Stages, input.Request.Rollback)
+	return &sdk.BuildPipelineSyncStagesResponse{
 		Stages: stages,
 	}, nil
 }
 
-// BuildQuickSyncStages implements deployment.DeploymentServiceServer.
-func (s *DeploymentServiceServer) BuildQuickSyncStages(ctx context.Context, request *deployment.BuildQuickSyncStagesRequest) (*deployment.BuildQuickSyncStagesResponse, error) {
-	now := time.Now()
-	stages := buildQuickSyncStages(request.GetRollback(), now)
-	return &deployment.BuildQuickSyncStagesResponse{
+// BuildQuickSyncStages implements sdk.DeploymentServiceServer.
+func (p *Plugin) BuildQuickSyncStages(ctx context.Context, _ *sdk.ConfigNone, input *sdk.BuildQuickSyncStagesInput) (*sdk.BuildQuickSyncStagesResponse, error) {
+	stages := buildQuickSyncStages(input.Request.Rollback)
+	return &sdk.BuildQuickSyncStagesResponse{
 		Stages: stages,
 	}, nil
 }
 
-// FetchDefinedStages implements deployment.DeploymentServiceServer.
-func (s *DeploymentServiceServer) FetchDefinedStages(context.Context, *deployment.FetchDefinedStagesRequest) (*deployment.FetchDefinedStagesResponse, error) {
-	return &deployment.FetchDefinedStagesResponse{
-		Stages: allStages,
-	}, nil
+// FetchDefinedStages implements sdk.DeploymentServiceServer.
+func (p *Plugin) FetchDefinedStages() []string {
+	return []string{
+		stageDeploy,
+		stageDiff,
+		stageRollback,
+	}
 }
 
 // ExecuteStage performs stage-defined tasks.
 // It returns stage status after execution without error.
 // An error will be returned only if the given stage is not supported.
-func (s *DeploymentServiceServer) ExecuteStage(ctx context.Context, request *deployment.ExecuteStageRequest) (response *deployment.ExecuteStageResponse, _ error) {
-	lp := s.logPersister.StageLogPersister(request.GetInput().GetDeployment().GetId(), request.GetInput().GetStage().GetId())
-	defer func() {
-		// When termination signal received and the stage is not completed yet, we should not mark the log persister as completed.
-		// This can occur when the piped is shutting down while the stage is still running.
-		if !response.GetStatus().IsCompleted() && signalhandler.Terminated() {
-			return
-		}
-		lp.Complete(time.Minute)
-	}()
-
-	status, err := s.executeStage(ctx, lp, request.GetInput())
+func (p *Plugin) ExecuteStage(ctx context.Context, _ *sdk.ConfigNone, dtCfgs []*sdk.DeployTarget[config.LambrollDeployTargetConfig], input *sdk.ExecuteStageInput[config.LambrollDeploymentInput]) (response *sdk.ExecuteStageResponse, _ error) {
+	status, err := executeStage(ctx, dtCfgs, input)
 	if err != nil {
 		return nil, err
 	}
-	return &deployment.ExecuteStageResponse{
+	return &sdk.ExecuteStageResponse{
 		Status: status,
 	}, nil
 }

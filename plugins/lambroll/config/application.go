@@ -2,25 +2,7 @@ package config
 
 import (
 	"errors"
-
-	config "github.com/pipe-cd/pipecd/pkg/configv1"
 )
-
-// LambrollApplicationSpec represents an application configuration for lambroll application.
-type LambrollApplicationSpec struct {
-	config.GenericApplicationSpec
-	// Input for lambroll deployment. e.g. lambroll version
-	Input LambrollDeploymentInput `json:"input"`
-	// Configuration for quick sync.
-	QuickSync LambrollDeployStageOptions `json:"quickSync"`
-}
-
-func (s *LambrollApplicationSpec) Validate() error {
-	if err := s.Input.validate(); err != nil {
-		return err
-	}
-	return nil
-}
 
 type LambrollDeploymentInput struct {
 	// FunctionFile is the path to the lambroll function file. This will be used as `lambroll deploy --function <functionFile>`

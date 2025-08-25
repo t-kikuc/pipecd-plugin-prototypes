@@ -6,19 +6,17 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	config "github.com/pipe-cd/pipecd/pkg/configv1"
-	"github.com/pipe-cd/pipecd/pkg/model"
-	"github.com/pipe-cd/pipecd/pkg/plugin/api/v1alpha1/deployment"
-	"github.com/pipe-cd/pipecd/pkg/plugin/logpersister"
+	sdk "github.com/pipe-cd/piped-plugin-sdk-go"
 	"github.com/t-kikuc/pipecd-plugin-prototypes/lambroll/cli"
-	ecspconfig "github.com/t-kikuc/pipecd-plugin-prototypes/lambroll/config"
+	config "github.com/t-kikuc/pipecd-plugin-prototypes/lambroll/config"
+	"github.com/t-kikuc/pipecd-plugin-prototypes/lambroll/toolregistry"
 )
 
 type deployExecutor struct {
 	appDir       string
 	lambrollPath string
-	input        ecspconfig.LambrollDeploymentInput
-	slp          logpersister.StageLogPersister
+	input        config.LambrollDeploymentInput
+	slp          sdk.StageLogPersister
 }
 
 func (e *deployExecutor) initLambrollCommand(ctx context.Context) (cmd *cli.Lambroll, ok bool) {
@@ -36,92 +34,90 @@ func (e *deployExecutor) initLambrollCommand(ctx context.Context) (cmd *cli.Lamb
 	return cmd, true
 }
 
-func (s *DeploymentServiceServer) executeStage(ctx context.Context, slp logpersister.StageLogPersister, input *deployment.ExecutePluginInput) (model.StageStatus, error) {
-	cfg, err := config.DecodeYAML[*ecspconfig.LambrollApplicationSpec](input.GetTargetDeploymentSource().GetApplicationConfig())
-	if err != nil {
-		slp.Errorf("Failed while decoding application config (%v)", err)
-		return model.StageStatus_STAGE_FAILURE, err
+func executeStage(ctx context.Context, dtCfgs []*sdk.DeployTarget[config.LambrollDeployTargetConfig], input *sdk.ExecuteStageInput[config.LambrollDeploymentInput]) (sdk.StageStatus, error) {
+	if len(dtCfgs) != 1 {
+		return sdk.StageStatusFailure, status.Error(codes.InvalidArgument, "the number of deploy target must be one for this plugin.")
 	}
 
 	e := &deployExecutor{
-		input:  cfg.Spec.Input,
-		slp:    slp,
-		appDir: string(input.GetTargetDeploymentSource().GetApplicationDirectory()),
+		input:  *input.Request.TargetDeploymentSource.ApplicationConfig.Spec,
+		slp:    input.Client.LogPersister(),
+		appDir: input.Request.TargetDeploymentSource.ApplicationDirectory,
 	}
-	e.lambrollPath, err = s.toolRegistry.Lambroll(ctx, s.deployTargetConfig.Version)
+	toolRegistry := toolregistry.NewRegistry(input.Client.ToolRegistry())
+	p, err := toolRegistry.Lambroll(ctx, dtCfgs[0].Config.Version)
 	if err != nil {
-		return model.StageStatus_STAGE_FAILURE, err
+		return sdk.StageStatusFailure, err
 	}
+	e.lambrollPath = p
 
-	slp.Infof("[DEBUG lambroll] ### pipedv1 executeStage() > %s ###", input.GetStage().GetName())
-
-	switch input.GetStage().GetName() {
-	case stageDeploy.String():
+	switch input.Request.StageName {
+	case stageDeploy:
 		return e.ensureSync(ctx), nil
-	case stageDiff.String():
+	case stageDiff:
 		return e.ensureDiff(ctx), nil
-	case stageRollback.String():
-		e.appDir = string(input.GetRunningDeploymentSource().GetApplicationDirectory())
-		return e.ensureRollback(ctx, input.GetDeployment().GetRunningCommitHash()), nil
+	case stageRollback:
+		e.appDir = input.Request.RunningDeploymentSource.ApplicationDirectory
+		return e.ensureRollback(ctx, input.Request.RunningDeploymentSource.CommitHash), nil
 	default:
-		return model.StageStatus_STAGE_FAILURE, status.Error(codes.InvalidArgument, "unsupported stage")
+		return sdk.StageStatusFailure, status.Error(codes.InvalidArgument, "unsupported stage")
 	}
 }
 
-func (e *deployExecutor) ensureSync(ctx context.Context) model.StageStatus {
+func (e *deployExecutor) ensureSync(ctx context.Context) sdk.StageStatus {
 	cmd, ok := e.initLambrollCommand(ctx)
 	if !ok {
-		return model.StageStatus_STAGE_FAILURE
+		return sdk.StageStatusFailure
 	}
 
 	if err := cmd.Deploy(ctx, e.slp); err != nil {
 		e.slp.Errorf("Failed to apply changes (%v)", err)
-		return model.StageStatus_STAGE_FAILURE
+		return sdk.StageStatusFailure
 	}
 
 	e.slp.Success("Successfully applied changes")
-	return model.StageStatus_STAGE_SUCCESS
+	return sdk.StageStatusSuccess
 }
 
-func (e *deployExecutor) ensureDiff(ctx context.Context) model.StageStatus {
+func (e *deployExecutor) ensureDiff(ctx context.Context) sdk.StageStatus {
 	cmd, ok := e.initLambrollCommand(ctx)
 	if !ok {
-		return model.StageStatus_STAGE_FAILURE
+		return sdk.StageStatusFailure
 	}
 
 	if err := cmd.Diff(ctx, e.slp); err != nil {
 		e.slp.Errorf("Failed to apply changes (%v)", err)
-		return model.StageStatus_STAGE_FAILURE
+		return sdk.StageStatusFailure
 	}
 
 	e.slp.Success("Successfully executed 'diff'")
-	return model.StageStatus_STAGE_SUCCESS
+	return sdk.StageStatusSuccess
 }
 
-func (e *deployExecutor) ensureRollback(ctx context.Context, runningCommitHash string) model.StageStatus {
+func (e *deployExecutor) ensureRollback(ctx context.Context, runningCommitHash string) sdk.StageStatus {
 	// There is nothing to do if this is the first deployment.
 	if runningCommitHash == "" {
 		e.slp.Errorf("Unable to determine the last deployed commit to rollback. It seems this is the first deployment.")
-		return model.StageStatus_STAGE_FAILURE
+		return sdk.StageStatusFailure
 	}
 
 	e.slp.Infof("Start rolling back to the state defined at commit %s", runningCommitHash)
 
 	cmd, ok := e.initLambrollCommand(ctx)
 	if !ok {
-		return model.StageStatus_STAGE_FAILURE
+		return sdk.StageStatusFailure
 	}
 
 	if err := cmd.Deploy(ctx, e.slp); err != nil {
 		e.slp.Errorf("Failed to apply changes (%v)", err)
-		return model.StageStatus_STAGE_FAILURE
+		return sdk.StageStatusFailure
 	}
 
 	e.slp.Success("Successfully rolled back the changes")
-	return model.StageStatus_STAGE_SUCCESS
+	return sdk.StageStatusSuccess
 }
 
-func showUsingVersion(ctx context.Context, cmd *cli.Lambroll, slp logpersister.StageLogPersister) (ok bool) {
+func showUsingVersion(ctx context.Context, cmd *cli.Lambroll, slp sdk.StageLogPersister) (ok bool) {
 	version, err := cmd.Version(ctx)
 	if err != nil {
 		slp.Errorf("Failed to check lambroll version (%v)", err)
